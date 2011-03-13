@@ -1,0 +1,49 @@
+1.0 INTRODUCTION
+================
+
+Deepend is a Mark and Release storage pool with Subpool capabilities for Ada 2005.
+
+It provides a binding to the Apache Runtime Pools implementation.
+
+Rather than deallocate items individually, which is error prone and subceptable to 
+memory leaks and other memory issues, a Mark Release pool allows the pool to be
+freed all at once, automatically when the pool object goes out of scope.
+
+Have you ever wondered why Deallocating in Ada is called Unchecked_Deallocation, and
+requires a bit more effort than delete in other languages?
+
+Part of the reason has to do with the potential memory issues alluded to above.
+
+With this Mark and Release Storage pool, Unchecked_Deallocation is implemented as 
+a No OP (null procedure), because it is not needed or intended to be used.
+
+A Mark and Release pool provides a safer means of memory management.
+
+Deepend is free software.  See the file COPYING for copying permission. Most of the source
+code is released under the GMGPL (GNAT Modified GPL) See the individual source files for
+details.
+
+Any comments on the generics would be greatly appreciated.
+Please send comments to brad.moore@shaw.ca
+
+
+2. SUPPORTED TARGETS AND COMPILERS
+=================================
+
+The storage pool has only been tested on Linux. The storage pool bindings themselve
+should be portable to any Ada 2005 supported platform, however since the software
+links to the Apache Runtime, the software is also limited to platforms where 
+the Apache Runtime libraries have been ported.
+
+3. TEST EXECUTABLES
+===================
+
+A simple test executable test_deepend executable exercises the bindings.
+
+The bindings have also been tested with Paraffin (See http://paraffin.sourceforge.net) code to
+create a binary tree in parallel to a predetermined depth. This excercised the subpool capability,
+as each worker task created its own subpool to store its own nodes, which were later processed,
+by the parent task.
+
+
+Brad Moore

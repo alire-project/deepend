@@ -1,0 +1,21 @@
+project Test_Mark_Release is
+
+   for Object_Dir use "bin/obj";
+   for Exec_Dir use "bin";
+
+   package Builder is
+      for Default_Switches ("ada") use ("-j4", "-g");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat05", "-gnatwc.cdfjklm.op.pr.rtu.wx.x", "-gnatyaAbcdefhiIklmprStux");
+   end Compiler;
+
+   for Main use ("test_mark_release.adb");
+
+   package Linker is
+      for Default_Switches ("ada") use ("-lapr-1");
+   end Linker;
+
+end Test_Mark_Release;
+
