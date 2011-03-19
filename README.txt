@@ -35,6 +35,33 @@ individual source files for details.
 Any comments on the generics would be greatly appreciated.
 Please send comments to brad.moore@shaw.ca
 
+2. LIMITATIONS
+==============
+It is erroneous to allocate objects that need finalization
+  eg. (Tasks, or objects of types inherited from types defined in
+       Ada.Finalization) from this storage pool
+and then Release the storage associated with those objects before they would 
+have otherwise been finalized.
+
+It is currently proposed that Ada 2012 will contain mechanisms to free such 
+objects needing finalization from a storage pool prior to the finalization of
+the pool.
+
+3. DOWNLOADING
+==============
+The latest stable release and older releases may be downloaded from;
+
+https://sourceforge.net/projects/deepend/files/
+
+For those who want the current development versions of the source they
+can download using git (http://git-scm.com/) by issuing the following commands
+
+  mkdir sandbox
+  cd sandbox
+  git clone git://deepend.git.sourceforge.net/gitroot/deepend/deepend
+
+The current development version typically will correspond to the latest stable
+release, but may at times be unstable when new features are being worked on.
 
 2. SUPPORTED TARGETS AND COMPILERS
 =================================

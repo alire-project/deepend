@@ -1,7 +1,8 @@
-project Test_Mark_Release is
+project Test_Dynamic_Pools is
 
-   for Object_Dir use "bin/obj";
-   for Exec_Dir use "bin";
+   for Object_Dir use "../bin/obj";
+   for Exec_Dir use "../bin";
+   for Main use ("test_dynamic_pools.adb");
 
    package Builder is
       for Default_Switches ("ada") use ("-j4", "-g");
@@ -11,11 +12,11 @@ project Test_Mark_Release is
       for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat05", "-gnatwc.cdfjklm.op.pr.rtu.wx.x", "-gnatyaAbcdefhiIklmprStux");
    end Compiler;
 
-   for Main use ("test_mark_release.adb");
-
    package Linker is
       for Default_Switches ("ada") use ("-lapr-1");
    end Linker;
 
-end Test_Mark_Release;
+   for Source_Dirs use (".", "../../deepend", "../apr");
+
+end Test_Dynamic_Pools;
 
