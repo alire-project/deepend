@@ -35,9 +35,9 @@ package body Apache_Runtime.Pools is
       Reserved_1, Reserved_2 : System.Address) return Apr_Status;
    pragma Import (C, Create_Ex, "apr_pool_create_ex");
 
-   function Is_Ancestor
+   function APR_Is_Ancestor
      (A, B : Pool_Type) return C.int;
-   pragma Import (C, Is_Ancestor, "apr_pool_is_ancestor");
+   pragma Import (C, APR_Is_Ancestor, "apr_pool_is_ancestor");
 
    ------------
    -- Create --
@@ -59,7 +59,7 @@ package body Apache_Runtime.Pools is
    function Is_Ancestor (A, B : Pool_Type) return Boolean is
       use type C.int;
    begin
-      return (Is_Ancestor (A, B) /= 0);
+      return (APR_Is_Ancestor (A, B) /= 0);
    end Is_Ancestor;
 
 end Apache_Runtime.Pools;

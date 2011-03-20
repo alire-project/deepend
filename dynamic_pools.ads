@@ -54,6 +54,9 @@ with System.Storage_Elements;
 
 package Dynamic_Pools is
    pragma Elaborate_Body;
+
+   Ada2012_Warnings : constant Boolean := False;
+
    --  Needed to ensure that library routines can execute allocators
 
    --  Allocation strategy:
@@ -92,7 +95,7 @@ package Dynamic_Pools is
    pragma Postcondition
      (not Objects_Need_Finalization (Pool));
    pragma Compile_Time_Warning
-     (True, "For Ada 2012, this should be Post'Class");
+     (Ada2012_Warnings, "For Ada 2012, this should be Post'Class");
    --  This call performs unchecked storage deallocation of all objects
    --  allocated from the pool. After this call, the Pool may still need
    --  finalization of its storage. The intent is to allow new objects to be
@@ -109,7 +112,7 @@ package Dynamic_Pools is
 --       (not Objects_Need_Finalization (Pool) and
 --        not Pool_Needs_Finalization (Pool));
    pragma Compile_Time_Warning
-     (True, "For Ada 2012, use post'class");
+     (Ada2012_Warnings, "For Ada 2012, use post'class");
 
    --  This call must have the effect of making a dispatching call to
    --  Unchecked_Deallocate_Objects for the specified Pool, and then releases
@@ -123,7 +126,7 @@ package Dynamic_Pools is
    function Objects_Need_Finalization
      (Pool : Dynamic_Pool'Class) return Boolean;
    pragma Compile_Time_Warning
-     (True,
+     (Ada2012_Warnings,
       "For Ada 2012, use in out parameter instead of access");
    --  Returns true if there are objects allocated from the pool that have
    --  not been deallocated and need finalization. This is class-wide because
@@ -133,42 +136,6 @@ package Dynamic_Pools is
    function Pool_Needs_Finalization
      (Pool : Dynamic_Pool) return Boolean is abstract;
    --  Returns true if the Pool needs finalization, false otherwise.
-
-   generic
-      type Allocation_Type is private;
-      type Allocation_Type_Access is access Allocation_Type;
-   function Allocation
-     (Pool : access Dynamic_Pool) return Allocation_Type_Access;
-
-   pragma Compile_Time_Warning
-     (True,
-      "For Ada 2012, use in out parameter instead of access");
-   --  This generic routine provides a mechanism to allocate an object of
-   --  a definite subtype from a pool.
-   --  The "new" has to be associated with the root storage pool, and currently
-   --  there is no way to override the storage pool object for the "new"
-   --  operator.
-   --
-   --  This function allows the storage pool object to be specified for an
-   --  allocation.
-
-   generic
-      type Allocation_Type (<>) is private;
-      type Allocation_Type_Access is access Allocation_Type;
-   function Initialized_Allocation
-     (Pool : access Dynamic_Pool;
-      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
-   pragma Compile_Time_Warning
-     (True,
-      "For Ada 2012, use in out parameter instead of access");
-   --  This generic routine provides a mechanism to allow an object of an
-   --  indefinite subtype, or a qualified expression from a pool.
-   --  The "new" has to be associated with the root storage pool, and currently
-   --  there is no way to override the storage pool object for the "new"
-   --  operator.
-   --
-   --  This function allows the storage pool object to be specified for an
-   --  allocation.
 
 private
 

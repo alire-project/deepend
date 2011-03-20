@@ -1,9 +1,9 @@
-with Dynamic_Pools; use Dynamic_Pools;
+with Dynamic_Pools.Subpools; use Dynamic_Pools;
 with Ada.Text_IO; use Ada.Text_IO;
 procedure Test_Dynamic_Pools
 is
-   Pool : aliased Unbounded_Dynamic_Pool
-     (Mode => Auto_Unchecked_Deallocation,
+   Pool : aliased Subpools.Dynamic_Pool_With_Subpools
+     (Mode => Subpools.Auto_Unchecked_Deallocation,
       Declaring_Task_Is_Owner => True);
 
    type Node_Type is record
@@ -18,10 +18,13 @@ is
      (Node_Type,
       Node_Access);
 
-   function Recurse (Pool : access Unbounded_Dynamic_Pool;
+   pragma Warnings (off, "*Sub_Pool*is not referenced");
+
+   function Recurse (Pool : access Subpools.Dynamic_Pool_With_Subpools;
                      Depth : Natural) return Node_Access
    is
-      Sub_Pool : aliased Unbounded_Dynamic_Pool := Create_Subpool (Pool);
+      Sub_Pool : aliased Subpools.Dynamic_Pool_With_Subpools
+        := Subpools.Create_Subpool (Pool);
       Node : constant Node_Access := New_Node (Sub_Pool'Access);
    begin
       if Depth = 0 then
@@ -32,6 +35,8 @@ is
          return Node;
       end if;
    end Recurse;
+
+   pragma Warnings (on, "*Sub_Pool*is not referenced");
 
    procedure Print (List : Node_Type)
    is
