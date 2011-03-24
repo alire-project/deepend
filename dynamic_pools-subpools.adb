@@ -236,7 +236,7 @@ package body Dynamic_Pools.Subpools is
 
    begin
 
-      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
       pragma Compile_Time_Warning
         (Ada2012_Warnings,
          "In Ada 2012, this should be a precondition");

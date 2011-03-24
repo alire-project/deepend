@@ -232,7 +232,7 @@ package Dynamic_Pools.Subpools is
    --  allocation.
 
    generic
-      type Allocation_Type (<>) is private;
+      type Allocation_Type is private;
       type Allocation_Type_Access is access Allocation_Type;
    function Initialized_Allocation
      (Pool : access Dynamic_Pool_With_Subpools;

@@ -41,11 +41,30 @@ It is erroneous to allocate objects that need finalization
   eg. (Tasks, or objects of types inherited from types defined in
        Ada.Finalization) from this storage pool
 and then Release the storage associated with those objects before they would 
-have otherwise been finalized.
+have otherwise been finalized. (Either through a call to 
+Unchecked_Deallocate_Storage, or through a call to Unchecked_Deallocate_Objecs
+for a parent pool that has a subpool containing such objects
+
+It is OK however to finalize a dynamic pool containing such objects if the
+access types for these objects are finalized before the pool is finalized,
+since Ada performs finalization of all allocated objects needing finalization
+from an access type when an access type is finalized.
+
+Access types for indefinite objects, such as variable length arrays and 
+variable sized record types with discriminants, i,e, fat pointers, cannot be
+allocated using the generic Allocate or Initialized_Allocate procedures.
+They may be allocated however using Ada's new operator, except this precludes
+the ability to dynamically specify the pool object. It uses the pool object
+that is statically associated with the access type.
 
 It is currently proposed that Ada 2012 will contain mechanisms to free such 
 objects needing finalization from a storage pool prior to the finalization of
-the pool.
+the pool, as well as provide syntax to allow fat pointers to be allocated to
+a subpool.
+
+Upgrading this package to Ada 2012 may (and likely will) involve making 
+changes to the visible specifications of this package, though existing 
+interfaces may be kept for backwards compatibility.
 
 3. DOWNLOADING
 ==============

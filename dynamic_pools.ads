@@ -113,15 +113,13 @@ package Dynamic_Pools is
 --        not Pool_Needs_Finalization (Pool));
    pragma Compile_Time_Warning
      (Ada2012_Warnings, "For Ada 2012, use post'class");
-
-   --  This call must have the effect of making a dispatching call to
-   --  Unchecked_Deallocate_Objects for the specified Pool, and then releases
-   --  all resources associated with the pools storage to the system, if
-   --  possible. The intent is to allow new objects to be allocated from the
-   --  Pool after this call, though such allocations may involve new storage
-   --  being to be allocated to the pool. Derivations of this type may choose
-   --  to disallow further allocations to the pool once its storage has been
-   --  deallocated.
+   --  This call must have the effect of calling Unchecked_Deallocate_Objects
+   --  for the specified Pool, and then releases all resources associated with
+   --  the pools storage to the system, if possible. Whether or not new
+   --  allocations can be made from the pool after this call is determined
+   --  by the implementation of the derived type. If such allocations are
+   --  allowed, then the allocations likely, though not necessarily, would
+   --  involve new storage being to be allocated to the pool.
 
    function Objects_Need_Finalization
      (Pool : Dynamic_Pool'Class) return Boolean;
