@@ -43,7 +43,10 @@
 with System.Storage_Elements;
 with Ada.Task_Identification; use Ada.Task_Identification;
 
-private with Apache_Runtime.Pools;
+private with Ada.Containers.Vectors;
+
+with Dynamic_Pools;
+pragma Elaborate_All (Dynamic_Pools);
 
 package Dynamic_Pools.Subpools is
    pragma Elaborate_Body;
@@ -101,6 +104,20 @@ package Dynamic_Pools.Subpools is
    --  the owner. Otherwise, the owner is not yet specified, and will be
    --  specified later, through the Set_Owner call, before any allocations can
    --  be made from the pool.
+
+   function Pool_Needs_Finalization
+     (Pool : Dynamic_Pool_With_Subpools) return Boolean;
+      --  Returns True if Unchecked_Deallocate_Storage has not been called for
+      --  the pool, and if the pool is a subpool then neither
+      --  Unchecked_Deallocate_Objects or Unchecked_Deallocate_Storage has
+      --  been called for any of the pools ancestors. Returns false otherwise.
+
+   function Is_Owner
+     (Pool : Dynamic_Pool_With_Subpools;
+      T : Task_Id := Current_Task) return Boolean;
+   pragma Precondition (Pool_Needs_Finalization (Pool));
+   --  Returns True if the specified task owns the pool/subpool and thus is
+   --  allowed to allocate from it.
 
    overriding function Storage_Size
      (Pool : Dynamic_Pool_With_Subpools)
@@ -168,7 +185,7 @@ package Dynamic_Pools.Subpools is
      (Pool : in out Dynamic_Pool_With_Subpools);
    pragma Precondition (Pool_Needs_Finalization (Pool));
    pragma Postcondition
-     (not Objects_Need_Finalization (Pool) and
+     (not Dynamic_Pools.Objects_Need_Finalization (Pool) and
       not Pool_Needs_Finalization (Pool));
    pragma Compile_Time_Warning
      (Ada2012_Warnings,
@@ -182,17 +199,11 @@ package Dynamic_Pools.Subpools is
 
    function Is_Ancestor
      (Ancestor, Child : Dynamic_Pool_With_Subpools) return Boolean;
+   pragma Precondition (Pool_Needs_Finalization (Child));
    --  Returns True is Ancestor is an ancestor of Child, i.e., the Child
    --  is a subpool of the Ancestor, or its parent is a subpool or the
    --  ancestor, or its parents parent is a subpool, and so on recursively
    --  to the ultimate ancestor.
-
-   function Is_Owner
-     (Pool : Dynamic_Pool_With_Subpools;
-      T : Task_Id := Current_Task) return Boolean;
-   pragma Precondition (Pool_Needs_Finalization (Pool));
-   --  Returns True if the specified task owns the pool/subpool and thus is
-   --  allowed to allocate from it.
 
    procedure Set_Owner
      (Pool : in out Dynamic_Pool_With_Subpools;
@@ -204,15 +215,9 @@ package Dynamic_Pools.Subpools is
 
    function Is_A_Subpool
      (Pool : Dynamic_Pool_With_Subpools'Class) return Boolean;
+   pragma Precondition (Pool_Needs_Finalization (Pool));
    --  Returns True if Pool is a subpool of another pool. Returns false
    --  otherwise.
-
-   function Pool_Needs_Finalization
-     (Pool : Dynamic_Pool_With_Subpools) return Boolean;
-      --  Returns True if Unchecked_Deallocate_Storage has not been called for
-      --  the pool, and if the pool is a subpool then neither
-      --  Unchecked_Deallocate_Objects or Unchecked_Deallocate_Storage has
-      --  been called for any of the pools ancestors. Returns false otherwise.
 
    generic
       type Allocation_Type is private;
@@ -251,27 +256,49 @@ package Dynamic_Pools.Subpools is
 
 private
 
+   type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
+
+   package Storage_Vector is new
+     Ada.Containers.Vectors (Index_Type => Positive,
+                             Element_Type => Storage_Array_Access);
+
+   type Pool_Storage;
+   type Pool_Storage_Access is access Pool_Storage;
+
+   package Subpool_Vector is new
+     Ada.Containers.Vectors (Index_Type => Positive,
+                             Element_Type => Pool_Storage_Access);
+
+   type Pool_Storage is
+      record
+         Used_List : Storage_Vector.Vector;
+         Free_List : Storage_Vector.Vector;
+         Active : Storage_Array_Access;
+         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Owner : Ada.Task_Identification.Task_Id;
+         Parent : Pool_Storage_Access;
+         Subpools : Subpool_Vector.Vector;
+         Object : access Pool_Storage_Access;
+      end record;
+
    type Dynamic_Pool_With_Subpools
      (Mode : Mode_Kinds;
       Declaring_Task_Is_Owner : Boolean) is
      new Dynamic_Pool with
       record
-         Pool : Apache_Runtime.Pools.Pool_Type;
-         Is_Subpool : Boolean;
-         Owner : Ada.Task_Identification.Task_Id;
+         Storage : aliased Pool_Storage_Access;
       end record;
 
-   overriding procedure Initialize (Item : in out Dynamic_Pool_With_Subpools);
-   pragma Postcondition (not Item.Is_A_Subpool);
+   overriding procedure Initialize (Pool : in out Dynamic_Pool_With_Subpools);
+   --  pragma Postcondition (not Pool.Is_A_Subpool);
 
-   overriding procedure Finalize   (Item : in out Dynamic_Pool_With_Subpools);
+   overriding procedure Finalize   (Pool : in out Dynamic_Pool_With_Subpools);
    pragma Precondition
-     (Item.Mode = Auto_Unchecked_Deallocation or
-        Item.Pool = System.Null_Address or Item.Is_A_Subpool);
+     (Pool.Mode = Auto_Unchecked_Deallocation or
+        not Objects_Need_Finalization (Pool) or Pool.Is_A_Subpool);
 
    pragma Inline (Storage_Size, Allocate, Create_Subpool);
    pragma Inline (Is_Ancestor, Is_A_Subpool, Is_Owner, Set_Owner);
-   pragma Inline (Unchecked_Deallocate_Objects);
    pragma Inline (Unchecked_Deallocate_Storage);
 
 end Dynamic_Pools.Subpools;

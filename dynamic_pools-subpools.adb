@@ -28,8 +28,21 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Conversion;
+with Ada.Unchecked_Deallocation;
 
 package body Dynamic_Pools.Subpools is
+
+   Minimum_Memory_Allocation : constant := 4_096;
+
+   procedure Free_Storage_Element (Position : Storage_Vector.Cursor);
+
+   procedure Free_Storage_Array is new Ada.Unchecked_Deallocation
+     (Object => System.Storage_Elements.Storage_Array,
+      Name => Storage_Array_Access);
+
+   procedure Free_Storage is new Ada.Unchecked_Deallocation
+     (Object => Pool_Storage,
+      Name => Pool_Storage_Access);
 
    --------------
    -- Allocate --
@@ -42,69 +55,150 @@ package body Dynamic_Pools.Subpools is
       Alignment    : System.Storage_Elements.Storage_Count)
    is
       pragma Unreferenced (Alignment);
+      use type System.Storage_Elements.Storage_Offset;
+      use type Ada.Containers.Count_Type;
    begin
-      Address := Apache_Runtime.Pools.Allocate
-        (Pool => Pool.Pool,
-         Size => Apache_Runtime.Apr_Size (Storage_Size));
+
+      --  If there's not enough space in the current hunk of memory
+      if Storage_Size <
+        Pool.Storage.Active'Length - Pool.Storage.Next_Allocation then
+
+         Pool.Storage.Used_List.Append (New_Item => Pool.Storage.Active);
+
+         if Pool.Storage.Free_List.Length > 0 and then
+           Pool.Storage.Free_List.First_Element'Length >= Storage_Size then
+            Pool.Storage.Active := Pool.Storage.Free_List.First_Element;
+            Pool.Storage.Free_List.Delete_First;
+         else
+            Pool.Storage.Active := new System.Storage_Elements.Storage_Array
+              (1 .. System.Storage_Elements.Storage_Count'Max
+                 (Storage_Size, Minimum_Memory_Allocation));
+         end if;
+
+         Pool.Storage.Next_Allocation := Pool.Storage.Active'First;
+
+      end if;
+
+      Address := Pool.Storage.Active (Pool.Storage.Next_Allocation)'Address;
+      Pool.Storage.Next_Allocation :=
+        Pool.Storage.Next_Allocation + Storage_Size;
+
    end Allocate;
 
    --------------------------------------------------------------
 
    function Create_Subpool
      (Parent : access Dynamic_Pool_With_Subpools)
-      return Dynamic_Pool_With_Subpools
-   is
-      use type Apache_Runtime.Apr_Status;
+      return Dynamic_Pool_With_Subpools is
    begin
+
       return  New_Pool : Dynamic_Pool_With_Subpools
         := (Dynamic_Pool with
             Mode => Auto_Unchecked_Deallocation,
             Declaring_Task_Is_Owner => True,
-            Pool => System.Null_Address,
-            Owner => Ada.Task_Identification.Current_Task,
-            Is_Subpool => True)
+            Storage => new Pool_Storage'
+              (Used_List => <>,
+               Free_List => <>,
+               Active => new System.Storage_Elements.Storage_Array
+                 (1 .. Minimum_Memory_Allocation),
+               Next_Allocation => 1,
+               Owner => Ada.Task_Identification.Current_Task,
+               Parent => Parent.Storage,
+               Subpools => <>,
+               Object => null))
       do
-         if Apache_Runtime.Pools.Create
-          (New_Pool => New_Pool.Pool'Address,
-           Parent   => Parent.all.Pool) /= 0 then
-            raise Storage_Error;
-         end if;
+         Subpool_Vector.Append
+           (Parent.Storage.Subpools, New_Pool.Storage);
+
+         New_Pool.Storage.Object := New_Pool.Storage'Unchecked_Access;
       end return;
 
    end Create_Subpool;
 
    --------------------------------------------------------------
 
-   overriding procedure Finalize
-     (Item : in out Dynamic_Pool_With_Subpools) is
+   procedure Finalize_Storage (Storage : in out Pool_Storage_Access)
+   is
+      procedure Finalize_Subpool (Position : Subpool_Vector.Cursor) is
+         Subpool : Pool_Storage_Access := Subpool_Vector.Element (Position);
+      begin
+         if Subpool /= null then
+            Finalize_Storage (Subpool);
+         end if;
+      end Finalize_Subpool;
+
    begin
-      --  Subpools dont get finalized until the top level parent is finalized
-      if not Item.Is_Subpool then
-         Apache_Runtime.Pools.Destroy (Item.Pool);
-         Item.Pool := System.Null_Address;
+      Storage.Subpools.Iterate (Process => Finalize_Subpool'Access);
+      Storage.Subpools.Clear;
+      Storage.Used_List.Iterate (Process => Free_Storage_Element'Access);
+      Storage.Used_List.Clear;
+      Storage.Free_List.Iterate (Process => Free_Storage_Element'Access);
+      Storage.Free_List.Clear;
+      Free_Storage_Array (Storage.Active);
+
+      if Storage.Object /= null then
+         Storage.Object := null;
       end if;
+
+      Free_Storage (Storage);
+
+   end Finalize_Storage;
+
+   overriding procedure Finalize
+     (Pool : in out Dynamic_Pool_With_Subpools)
+   is
+      use type Ada.Containers.Count_Type;
+   begin
+      if Pool.Storage = null then
+         return;
+      end if;
+
+      --  Pool storage is now detached from its object
+      Pool.Storage.Object := null;
+
+      --  Subpools dont get finalized until the top level parent is finalized
+
+      if Pool.Storage.Parent = null then
+         Finalize_Storage (Pool.Storage);
+      end if;
+
    end Finalize;
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize
-     (Item : in out Dynamic_Pool_With_Subpools)
-   is
-      use type Apache_Runtime.Apr_Status;
+   procedure Free_Storage_Element (Position : Storage_Vector.Cursor) is
+       Storage : Storage_Array_Access := Storage_Vector.Element (Position);
    begin
-      if Apache_Runtime.Pools.Create
-          (New_Pool => Item.Pool'Address,
-           Parent   => System.Null_Address) /= 0 then
-         raise Storage_Error;
-      end if;
+      Free_Storage_Array (Storage);
+   end Free_Storage_Element;
 
-      if Item.Declaring_Task_Is_Owner then
-         Item.Owner := Ada.Task_Identification.Current_Task;
-      else
-         Item.Owner := Ada.Task_Identification.Null_Task_Id;
-      end if;
+   --------------------------------------------------------------
 
-      Item.Is_Subpool := False;
+   overriding procedure Initialize
+     (Pool : in out Dynamic_Pool_With_Subpools)
+   is
+      function Get_Owner return Ada.Task_Identification.Task_Id is
+      begin
+         if Pool.Declaring_Task_Is_Owner then
+            return Ada.Task_Identification.Current_Task;
+         else
+            return Ada.Task_Identification.Null_Task_Id;
+         end if;
+      end Get_Owner;
+
+   begin
+
+      Pool.Storage := new Pool_Storage'
+        (Used_List => <>,
+         Free_List => <>,
+         Active => new System.Storage_Elements.Storage_Array
+           (1 .. Minimum_Memory_Allocation),
+         Next_Allocation => 1,
+         Owner => Get_Owner,
+         Parent => null,
+         Subpools => <>,
+         Object => Pool.Storage'Unchecked_Access);
+
    end Initialize;
 
    --------------------------------------------------------------
@@ -112,15 +206,24 @@ package body Dynamic_Pools.Subpools is
    function Is_A_Subpool
      (Pool : Dynamic_Pool_With_Subpools'Class) return Boolean is
    begin
-      return Pool.Is_Subpool;
+      return Pool.Storage.Parent /= null;
    end Is_A_Subpool;
 
    --------------------------------------------------------------
 
    function Is_Ancestor
-     (Ancestor, Child : Dynamic_Pool_With_Subpools) return Boolean is
+     (Ancestor, Child : Dynamic_Pool_With_Subpools) return Boolean
+   is
+      Pool : Pool_Storage_Access := Child.Storage.Parent;
    begin
-      return Apache_Runtime.Pools.Is_Ancestor (Ancestor.Pool, Child.Pool);
+      while Pool /= null loop
+         if Pool = Ancestor.Storage then
+            return True;
+         end if;
+         Pool := Pool.Parent;
+      end loop;
+
+      return False;
    end Is_Ancestor;
 
    --------------------------------------------------------------
@@ -129,15 +232,17 @@ package body Dynamic_Pools.Subpools is
      (Pool : Dynamic_Pool_With_Subpools;
       T : Task_Id := Current_Task) return Boolean is
    begin
-      return (Pool.Owner = T);
+      return (Pool.Storage.Owner = T);
    end Is_Owner;
 
    --------------------------------------------------------------
 
    function Pool_Needs_Finalization
-     (Pool : Dynamic_Pool_With_Subpools) return Boolean is
+     (Pool : Dynamic_Pool_With_Subpools) return Boolean
+   is
+      use type System.Storage_Elements.Storage_Offset;
    begin
-      return (Pool.Pool /= System.Null_Address);
+      return (Pool.Storage /= null);
    end Pool_Needs_Finalization;
 
    --------------------------------------------------------------
@@ -146,7 +251,7 @@ package body Dynamic_Pools.Subpools is
      (Pool : in out Dynamic_Pool_With_Subpools;
       T : Task_Id := Current_Task) is
    begin
-      Pool.Owner := T;
+      Pool.Storage.Owner := T;
    end Set_Owner;
 
    ------------------
@@ -165,17 +270,27 @@ package body Dynamic_Pools.Subpools is
    --------------------------------------------------------------
 
    procedure Unchecked_Deallocate_Objects
-     (Pool : in out Dynamic_Pool_With_Subpools) is
+     (Pool : in out Dynamic_Pool_With_Subpools)
+   is
+      pragma Warnings (Off, "*Subpool*modified*but*never*referenced*");
+      procedure Finalize_Subpool (Position : Subpool_Vector.Cursor) is
+         Subpool : Pool_Storage_Access := Subpool_Vector.Element (Position);
+      begin
+         Finalize_Storage (Subpool);
+      end Finalize_Subpool;
+      pragma Warnings (On, "*Subpool*modified*but*never*referenced*");
    begin
       --  If we had access to the Ada finalization functionality, we would
-      --  have stored that as user data in the Apache Pool,
-      --  by calling apr_pool_userdata_set, and would have
-      --  specified the routines to be called when the pools are cleared or
-      --  destroyed in in apr_pool_cleanup_register.
+      --  have stored called that functionality here to finalize objects
+      --  needing finalization.
       --  Since we don't have access to this functionality in Ada 2005, all we
       --  can do is call Clear.
 
-      Apache_Runtime.Pools.Clear (Pool.Pool);
+      Pool.Storage.Subpools.Iterate (Process => Finalize_Subpool'Access);
+      Pool.Storage.Subpools.Clear;
+      Pool.Storage.Free_List.Append (New_Item => Pool.Storage.Used_List);
+      Pool.Storage.Used_List.Clear;
+      Pool.Storage.Next_Allocation := 1;
    end Unchecked_Deallocate_Objects;
 
    --------------------------------------------------------------
@@ -183,14 +298,24 @@ package body Dynamic_Pools.Subpools is
    procedure Unchecked_Deallocate_Storage
      (Pool : in out Dynamic_Pool_With_Subpools) is
    begin
-      Apache_Runtime.Pools.Destroy (Pool.Pool);
-      Pool.Pool := System.Null_Address;
+
+      if Pool.Storage = null then
+         return;
+      end if;
+
+      if Pool.Storage.Parent /= null then
+         declare
+            Position : Subpool_Vector.Cursor := Subpool_Vector.Find
+              (Pool.Storage.Parent.Subpools, Pool.Storage);
+         begin
+            Subpool_Vector.Delete
+              (Pool.Storage.Parent.Subpools, Position);
+         end;
+      end if;
+
+      Finalize_Storage (Pool.Storage);
+
    end Unchecked_Deallocate_Storage;
-
-   Initialize_Status : constant Apache_Runtime.Apr_Status :=
-     Apache_Runtime.Pools.Initialize;
-
-   use type Apache_Runtime.Apr_Status;
 
    function Allocation
      (Pool : access Dynamic_Pool_With_Subpools)
@@ -257,9 +382,4 @@ package body Dynamic_Pools.Subpools is
       end;
 
    end Initialized_Allocation;
-
-begin
-   if Initialize_Status /= 0 then
-      raise Program_Error;
-   end if;
 end Dynamic_Pools.Subpools;
