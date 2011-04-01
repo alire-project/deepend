@@ -1,0 +1,11 @@
+Deepend Version History.
+
+deepend-1.2
+- Removed binding to Apache Runtime Pools library. Deepend is now pure Ada 
+  source.
+
+deepend-1.1
+-  Addressed comments from initial code review. 
+
+
+deepend-1.0	- Initial Version
