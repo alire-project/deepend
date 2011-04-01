@@ -7,8 +7,6 @@ object to be individually reclaimed one at a time. Subpools may be completely
 independent pools, or they may be chained together in order to extend the 
 lifetime of child pools to that of the lifetime of the root parent pool.
 
-Deepend is a binding to the Apache Runtime Pools implementation.
-
 Rather than deallocate items individually which is error prone and subceptable
 to memory leaks and other memory issues, a subpool can be freed all at once 
 automatically when the pool object goes out of scope. 
@@ -85,10 +83,7 @@ release, but may at times be unstable when new features are being worked on.
 2. SUPPORTED TARGETS AND COMPILERS
 =================================
 
-The storage pool has only been tested on Linux. The storage pool bindings 
-themselves should be portable to any Ada 2005 supported platform, however since 
-the software links to the Apache Runtime, the software is also limited to 
-platforms where the Apache Runtime libraries have been ported.
+The storage pool has been tested on Linux and Windows.
 
 3. TEST EXECUTABLES
 ===================
