@@ -1,0 +1,20 @@
+project Test_Dynamic_Pools_Windows is
+
+   for Object_Dir use "..\bin\obj";
+   for Exec_Dir use "..\bin";
+   for Main use ("test_dynamic_pools.adb");
+   for Source_Dirs use (".", "..\..\deepend");
+
+   package Builder is
+      for Default_Switches ("ada") use ("-j4", "-g");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat05", "-gnatwc.cfjklm.op.pr.rtu.wx.x", "-gnatyaAbcefhiIklmprStux");
+   end Compiler;
+
+   package Linker is
+   end Linker;
+
+end Test_Dynamic_Pools_Windows;
+

@@ -1,4 +1,4 @@
-project Test_Dynamic_Pools is
+project Test_Dynamic_Pools_Linux is
 
    for Object_Dir use "../bin/obj";
    for Exec_Dir use "../bin";
@@ -13,10 +13,9 @@ project Test_Dynamic_Pools is
    end Compiler;
 
    package Linker is
-      for Default_Switches ("ada") use ("-lapr-1");
    end Linker;
 
    for Source_Dirs use (".", "../../deepend", "../apr");
 
-end Test_Dynamic_Pools;
+end Test_Dynamic_Pools_Linux;
 

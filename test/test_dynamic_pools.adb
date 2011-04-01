@@ -27,8 +27,6 @@ is
      (Allocation_Type => Id_String,
       Allocation_Type_Access => Id_String_Access);
 
-   pragma Warnings (off, "*Sub_Pool*is not referenced");
-
    function Recurse (Pool : access Subpools.Dynamic_Pool_With_Subpools;
                      Depth : Natural) return Node_Access
    is
@@ -65,12 +63,10 @@ is
          Node.all := (Value => Depth,
                       Name => Name.all'Unchecked_Access,
                       Description => Description,
-                      Next => Recurse (Sub_Pool'Access, Depth - 1));
+                      Next => Recurse (Sub_Pool'Unchecked_Access, Depth - 1));
          return Node;
       end if;
    end Recurse;
-
-   pragma Warnings (on, "*Sub_Pool*is not referenced");
 
    procedure Print (List : Node_Type)
    is
@@ -83,7 +79,7 @@ is
                 ">, Desc=<" & List.Description.all & '>');
    end Print;
 
-   List : constant Node_Access := Recurse (Pool'Access, 10);
+   List : constant Node_Access := Recurse (Pool'Unchecked_Access, 10);
 begin
    Print (List.all);
 end Test_Dynamic_Pools;
