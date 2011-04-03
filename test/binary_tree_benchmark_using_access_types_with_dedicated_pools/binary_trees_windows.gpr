@@ -1,0 +1,24 @@
+project Binary_Trees_Windows is
+
+   for Object_Dir use "..\obj";
+   for Exec_Dir use ".";
+   for Main use ("binary_trees.adb");
+   for Source_Dirs use (".", "..\..\");
+
+   package Builder is
+      for Default_Switches ("ada") use ("-j4", "-g");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x", "-gnatyaAbcefhikIlnmprStux", "-gnat05", "-gnatVn", "-gnatp", "-O3", "-gnatn", "-funroll-loops");
+   end Compiler;
+
+   package Linker is
+   end Linker;
+
+   package Binder is
+      for Default_Switches ("ada") use ("-E");
+   end Binder;
+
+end Binary_Trees_Windows;
+
