@@ -1,7 +1,7 @@
 project Test_Dynamic_Pools_Linux is
 
-   for Object_Dir use "../bin/obj";
-   for Exec_Dir use "../bin";
+   for Object_Dir use "./obj";
+   for Exec_Dir use ".";
    for Main use ("test_dynamic_pools.adb");
 
    package Builder is
@@ -15,7 +15,7 @@ project Test_Dynamic_Pools_Linux is
    package Linker is
    end Linker;
 
-   for Source_Dirs use (".", "../../deepend", "../apr");
+   for Source_Dirs use (".", "../");
 
 end Test_Dynamic_Pools_Linux;
 
