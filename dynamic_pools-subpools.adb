@@ -272,13 +272,11 @@ package body Dynamic_Pools.Subpools is
    procedure Unchecked_Deallocate_Objects
      (Pool : in out Dynamic_Pool_With_Subpools)
    is
-      pragma Warnings (Off, "*Subpool*modified*but*never*referenced*");
       procedure Finalize_Subpool (Position : Subpool_Vector.Cursor) is
          Subpool : Pool_Storage_Access := Subpool_Vector.Element (Position);
       begin
          Finalize_Storage (Subpool);
       end Finalize_Subpool;
-      pragma Warnings (On, "*Subpool*modified*but*never*referenced*");
    begin
       --  If we had access to the Ada finalization functionality, we would
       --  have stored called that functionality here to finalize objects
