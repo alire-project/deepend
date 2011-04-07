@@ -1,5 +1,11 @@
 Deepend Version History.
 
+deepend-1.3
+- Added alternate preview of Ada 2012 version, depending on whether
+  further changes can be made to the Ada 2012 proposal. The alternate
+  version is intended to be considered as safer than the previous version
+  since it avoids dangling reference possibilities for subpool handles.
+
 deepend-1.2
 - Removed binding to Apache Runtime Pools library. Deepend is now pure Ada 
   source.
