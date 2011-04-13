@@ -6,7 +6,7 @@
 --    C version by Francesco Abbate
 --
 --  Contributed by Brad Moore
-with Dynamic_Pools.Subpools; use Dynamic_Pools;
+with Dynamic_Pools; use Dynamic_Pools;
 
 package Trees is
 
@@ -14,7 +14,7 @@ package Trees is
    function Item_Check (Item : Tree_Node) return Integer;
 
    function Create
-     (Pool : Subpools.Dynamic_Pool_With_Subpools;
+     (Subpool : Subpool_Handle;
       Item : Integer;
       Depth : Integer) return Tree_Node;
 

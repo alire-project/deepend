@@ -17,4 +17,3 @@ project Test_Dynamic_Pools_Windows is
    end Linker;
 
 end Test_Dynamic_Pools_Windows;
-

@@ -1,5 +1,13 @@
 Deepend Version History.
 
+deepend-2.0
+- Major redesign to work with the Ada 2012 described in AI05-0111-3.
+- Subpools can no longer have subpools. This did not seem to be necessary
+  and added runtime complexity. Instead, the root pool can have any number
+  of subpools concurrently.
+- Synchronization added to pools subpool list, to allow tasks to create 
+  subpools
+
 deepend-1.3
 - Added alternate preview of Ada 2012 version, depending on whether
   further changes can be made to the Ada 2012 proposal. The alternate
@@ -12,6 +20,5 @@ deepend-1.2
 
 deepend-1.1
 -  Addressed comments from initial code review. 
-
 
 deepend-1.0	- Initial Version

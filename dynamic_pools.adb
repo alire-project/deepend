@@ -27,29 +27,354 @@
 --  executable file might be covered by the GNU Public License.             --
 ------------------------------------------------------------------------------
 
+with Ada.Unchecked_Deallocation;
+with Ada.Unchecked_Conversion;
+
 package body Dynamic_Pools is
 
+   procedure Free_Storage_Element (Position : Storage_Vector.Cursor);
+
+   procedure Free_Storage_Array is new Ada.Unchecked_Deallocation
+     (Object => System.Storage_Elements.Storage_Array,
+      Name => Storage_Array_Access);
+
+   procedure Free_Subpool is new Ada.Unchecked_Deallocation
+     (Object => Dynamic_Subpool,
+      Name => Dynamic_Subpool_Access);
+
+   protected body Subpool_Set is
+      procedure Add (Subpool : Dynamic_Subpool_Access) is
+      begin
+         Subpools.Append (Subpool);
+      end Add;
+
+      procedure Deallocate_All
+      is
+         procedure Deallocate_Pools (Position : Subpool_Vector.Cursor) is
+            Subpool : Subpool_Handle := Subpool_Vector.Element
+              (Position).all'Access;
+         begin
+            Unchecked_Deallocate_Subpool (Subpool);
+         end Deallocate_Pools;
+      begin
+         Subpools.Iterate (Deallocate_Pools'Access);
+      end Deallocate_All;
+
+      procedure Delete (Subpool : Dynamic_Subpool_Access) is
+         Position : Subpool_Vector.Cursor;
+      begin
+         Position := Subpools.Find (Subpool);
+         Subpools.Delete (Position);
+      end Delete;
+
+      function Get_Default_Subpool return Subpool_Handle is
+      begin
+         return Subpools.First_Element.all'Access;
+      end Get_Default_Subpool;
+   end Subpool_Set;
+
+   overriding
+   procedure Allocate
+     (Pool : in out Dynamic_Pool;
+      Storage_Address : out Address;
+      Size_In_Storage_Elements : Storage_Elements.Storage_Count;
+      Alignment : Storage_Elements.Storage_Count) is
+   begin
+      Pool.Allocate_From_Subpool
+        (Storage_Address,
+         Size_In_Storage_Elements,
+         Alignment,
+         Pool.Default_Subpool_for_Pool);
+   end Allocate;
+
+   overriding
+   procedure Allocate_From_Subpool
+     (Pool : in out Dynamic_Pool;
+      Storage_Address : out Address;
+      Size_In_Storage_Elements : Storage_Elements.Storage_Count;
+      Alignment : Storage_Elements.Storage_Count;
+      Subpool : --  not null
+      Subpool_Handle)
+   is
+      pragma Unreferenced (Alignment);
+      use type System.Storage_Elements.Storage_Offset;
+      use type Ada.Containers.Count_Type;
+      Sub : Dynamic_Subpool renames Dynamic_Subpool (Subpool.all);
+   begin
+
+      --  If there's not enough space in the current hunk of memory
+      if Size_In_Storage_Elements <
+        Sub.Active'Length - Sub.Next_Allocation then
+
+         Sub.Used_List.Append (New_Item => Sub.Active);
+
+         if Sub.Free_List.Length > 0 and then
+           Sub.Free_List.First_Element'Length >= Size_In_Storage_Elements then
+            Sub.Active := Sub.Free_List.First_Element;
+            Sub.Free_List.Delete_First;
+         else
+            Sub.Active := new System.Storage_Elements.Storage_Array
+              (1 .. System.Storage_Elements.Storage_Count'Max
+                 (Size_In_Storage_Elements, Pool.Minimum_Allocation));
+         end if;
+
+         Sub.Next_Allocation := Sub.Active'First;
+
+      end if;
+
+      Storage_Address := Sub.Active (Sub.Next_Allocation)'Address;
+      Sub.Next_Allocation := Sub.Next_Allocation + Size_In_Storage_Elements;
+   end Allocate_From_Subpool;
+
+   --------------------------------------------------------------
+
+   function Allocation
+     (Subpool : Subpool_Handle) return Allocation_Type_Access
+   is
+      Location : System.Address;
+
+      function Convert is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Allocation_Type_Access);
+      use type System.Storage_Elements.Storage_Offset;
+   begin
+
+      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      pragma Compile_Time_Warning
+        (Ada2012_Warnings,
+         "In Ada 2012, this should be a precondition");
+
+      Pool_of_Subpool (Subpool).Allocate_From_Subpool
+        (Storage_Address => Location,
+         Size_In_Storage_Elements =>
+           Allocation_Type'Max_Size_In_Storage_Elements,
+         Alignment => Allocation_Type'Alignment,
+         Subpool => Subpool);
+
+      return Convert (Location);
+   end Allocation;
+
+   --------------------------------------------------------------
+
+   function Initialized_Allocation
+     (Subpool : Subpool_Handle;
+      Qualified_Expression : Allocation_Type)
+      return Allocation_Type_Access
+   is
+      Location : System.Address;
+
+      function Convert is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Allocation_Type_Access);
+
+      use type System.Storage_Elements.Storage_Offset;
+
+   begin
+
+      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      pragma Compile_Time_Warning
+        (Ada2012_Warnings,
+         "In Ada 2012, this should be a precondition");
+
+      Pool_of_Subpool (Subpool).Allocate_From_Subpool
+        (Storage_Address => Location,
+         Size_In_Storage_Elements =>
+           Qualified_Expression'Size /
+             System.Storage_Elements.Storage_Element'Size,
+         Alignment => Allocation_Type'Alignment,
+         Subpool => Subpool);
+
+      declare
+         Result : constant Allocation_Type_Access := Convert (Location);
+      begin
+         Result.all := Qualified_Expression;
+         return Result;
+      end;
+
+   end Initialized_Allocation;
+
+  --------------------------------------------------------------
+
+   function Create_Subpool
+     (Pool : access Dynamic_Pool) return not null Subpool_Handle
+   is
+      New_Pool : constant Dynamic_Subpool_Access := new Dynamic_Subpool'
+        (Root_Subpool with
+         Used_List => <>,
+         Free_List => <>,
+         Active => new System.Storage_Elements.Storage_Array
+           (1 .. Pool.Minimum_Allocation),
+         Next_Allocation => 1,
+         Owner => Ada.Task_Identification.Current_Task,
+         Deallocate_Storage => True);
+
+      Result : constant Subpool_Handle := New_Pool.all'Unchecked_Access;
+   begin
+
+      Pool.Subpools.Add (New_Pool);
+
+      Set_Pool_of_Subpool
+        (Subpool => Result,
+         To => Pool.all);
+
+      return Result;
+
+   end Create_Subpool;
+
+   --------------------------------------------------------------
+
+   overriding procedure Deallocate_Subpool
+     (Pool : in out Dynamic_Pool;
+      Subpool : in out Subpool_Handle)
+   is
+      The_Subpool : Dynamic_Subpool_Access
+        := Dynamic_Subpool (Subpool.all)'Access;
+   begin
+
+      if The_Subpool.Deallocate_Storage then
+
+         Pool.Subpools.Delete (The_Subpool);
+
+         The_Subpool.Used_List.Iterate
+           (Process => Free_Storage_Element'Access);
+
+         The_Subpool.Used_List.Clear;
+
+         The_Subpool.Free_List.Iterate
+           (Process => Free_Storage_Element'Access);
+
+         The_Subpool.Free_List.Clear;
+         Free_Storage_Array (The_Subpool.Active);
+
+         Free_Subpool (The_Subpool);
+      else
+         --  If we had access to the Ada finalization functionality, we would
+         --  have stored called that functionality here to finalize objects
+         --  needing finalization.
+         --  Since we don't have access to this functionality in Ada 2005,
+         --  all we can do is call Clear.
+
+         The_Subpool.Free_List.Append
+           (New_Item => The_Subpool.Used_List);
+
+         The_Subpool.Used_List.Clear;
+         The_Subpool.Next_Allocation := 1;
+         The_Subpool.Deallocate_Storage := False;
+
+      end if;
+
+   end Deallocate_Subpool;
+
+   --------------------------------------------------------------
+
+   overriding function Default_Subpool_for_Pool
+     (Pool : Dynamic_Pool)
+      return not null Subpool_Handle is
+   begin
+      return Pool.Subpools.Get_Default_Subpool;
+   end Default_Subpool_for_Pool;
+
+   --------------------------------------------------------------
+
+   overriding procedure Finalize   (Pool : in out Dynamic_Pool) is
+   begin
+      Pool.Subpools.Deallocate_All;
+   end Finalize;
+
+   --------------------------------------------------------------
+
+   overriding procedure Finalize   (Scope : in out Scope_Bomb) is
+      Subpool : Subpool_Handle := Scope.Subpool;
+   begin
+      Unchecked_Deallocate_Subpool (Subpool);
+   end Finalize;
+
+   --------------------------------------------------------------
+
+   procedure Free_Storage_Element (Position : Storage_Vector.Cursor) is
+       Storage : Storage_Array_Access := Storage_Vector.Element (Position);
+   begin
+      Free_Storage_Array (Storage);
+   end Free_Storage_Element;
+
+   --------------------------------------------------------------
+
+   overriding procedure Initialize (Pool : in out Dynamic_Pool) is
+   begin
+      Pool.Default_Subpool := Pool.Create_Subpool;
+   end Initialize;
+
+   --------------------------------------------------------------
+
+   function Is_Owner
+     (Subpool : not null Subpool_Handle;
+      T : Task_Id := Current_Task) return Boolean is
+   begin
+      return (Dynamic_Subpool (Subpool.all).Owner = T);
+   end Is_Owner;
+
+   --------------------------------------------------------------
+
    function Objects_Need_Finalization
-     (Pool : Dynamic_Pool'Class) return Boolean is
+     (Subpool : Subpool_Handle) return Boolean is
       --  See Unchecked_Deallocate_Objects. Since we cannot know this, and
       --  cant support allocation of objects needing finalization we
       --  always return false.
-      pragma Unreferenced (Pool);
+      pragma Unreferenced (Subpool);
    begin
       return False;
    end Objects_Need_Finalization;
 
    --------------------------------------------------------------
 
+   procedure Set_Owner
+     (Subpool : not null Subpool_Handle;
+      T : Task_Id := Current_Task) is
+   begin
+      Dynamic_Subpool (Subpool.all).Owner := T;
+   end Set_Owner;
+
+   --------------------------------------------------------------
+
+   pragma Warnings (Off, "*Subpool*not modified*");
    procedure Unchecked_Deallocate_Objects
-     (Pool : in out Dynamic_Pool) is
+     (Subpool : Subpool_Handle) is
    --  Currently only the vendor could supply such a routine. Ada 2012
    --  will expose this functionality, but for now we have to say that
    --  it is erroneous to allocate objects needing finalization such as tasks,
    --  protected objects and type derived types defined in Ada.Finalization
    --  from a dynamic pool.
+
+      --  Copy : Subpool_Handle := Subpool;
+
    begin
-      null;
+
+      --  Set the flag that prevents the subpool storage from being freed. Only
+      --  the objects will be freed.
+      Dynamic_Subpool
+        (Subpool.all).Deallocate_Storage := False;
+
+      --  As per AI05-0111-3
+      --  Ada.Unchecked_Deallocate_Subpool (Copy);
+      --  In this case, Copy will not be set to null after this call
    end Unchecked_Deallocate_Objects;
+
+   procedure Unchecked_Deallocate_Subpool
+     (Subpool : in out Subpool_Handle) is
+   begin
+      if Subpool = null then
+         return;
+      end if;
+
+      --  Set the flag that prevents the subpool storage from being freed. Only
+      --  the objects will be freed.
+      Dynamic_Subpool (Subpool.all).Deallocate_Storage := True;
+
+      --  As per AI05-0111-3
+      --  Ada.Unchecked_Deallocate_Subpool (Subpool);
+
+   end Unchecked_Deallocate_Subpool;
+
+   pragma Warnings (On, "*Subpool*not modified*");
 
 end Dynamic_Pools;

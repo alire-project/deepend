@@ -49,8 +49,13 @@
 --  Pools Implementation. This may change in the future, as it is desirable to
 --  provide a solution written entirely in Ada.
 
-with System.Storage_Pools;
+--  with System.Storage_Elements;
+with Sys.Storage_Pools.Subpools; use Sys.Storage_Pools.Subpools; use Sys;
+with Ada.Task_Identification; use Ada.Task_Identification;
+with Ada.Finalization;
 with System.Storage_Elements;
+
+private with Ada.Containers.Vectors;
 
 package Dynamic_Pools is
    pragma Elaborate_Body;
@@ -72,28 +77,38 @@ package Dynamic_Pools is
    --  they would have otherwise been finalized. Ada 2012 is proposing to
    --  provide facilities that would allow such early finalization.
 
-   use type System.Address;
+   subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
 
    type Dynamic_Pool
-     is abstract new System.Storage_Pools.Root_Storage_Pool with private;
+     (Minimum_Allocation : System.Storage_Elements.Storage_Count) is
+     new Storage_Pools.Subpools.Root_Storage_Pool_with_Subpools
+   with private;
+   pragma Compile_Time_Warning
+     (Ada_2012_Warnings, "In Ada 2012, use 4096 as default discriminant");
 
-   overriding procedure Deallocate
-     (Pool         : in out Dynamic_Pool;
-      Address      : System.Address;
-      Storage_Size : System.Storage_Elements.Storage_Count;
-      Alignment    : System.Storage_Elements.Storage_Count)
-   is null;
-   --  Ada.Unchecked_Deallocation is not needed for this family of storage
-   --  pools. Deallocate is not meant to be called (directly or indirectly in
-   --  the usual way via Ada.Unchecked_Deallocation, as this call has no effect
-   --  for a Dynamic Pool. Deallocation of objects in the pool occurs when the
-   --  Storage pool object is finalized (or when Unchecked_Deallocate_Objects
-   --  or Unchecked_Deallocate_Storage is called).
+   function Create_Subpool
+     (Pool : access Dynamic_Pool) return not null Subpool_Handle;
+
+   function Is_Owner
+     (Subpool : not null Subpool_Handle;
+      T : Task_Id := Current_Task) return Boolean;
+   --  Returns True if the specified task owns the pool/subpool and thus is
+   --  allowed to allocate from it.
+
+   procedure Set_Owner
+     (Subpool : not null Subpool_Handle;
+      T : Task_Id := Current_Task);
+   pragma Precondition
+     ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
+      or else (Is_Owner (Subpool) and then T = Null_Task_Id));
+   pragma Postcondition (Is_Owner (Subpool, T));
+   --  The task that owns a pool/subpool and therefore allowed to allocate
+   --  from it, can only be specified once for a particular pool.
 
    procedure Unchecked_Deallocate_Objects
-     (Pool : in out Dynamic_Pool);
+     (Subpool : Subpool_Handle);
    pragma Postcondition
-     (not Objects_Need_Finalization (Pool));
+     (not Objects_Need_Finalization (Subpool));
    pragma Compile_Time_Warning
      (Ada2012_Warnings, "For Ada 2012, this should be Post'Class");
    --  This call performs unchecked storage deallocation of all objects
@@ -106,13 +121,13 @@ package Dynamic_Pools is
    --  Dynamic_Pool type must call the procedure of this abstract type from
    --  overriding procedures. (This is enforced by the postcondition.)
 
-   procedure Unchecked_Deallocate_Storage
-     (Pool : in out Dynamic_Pool) is abstract;
---   pragma Postcondition
---       (not Objects_Need_Finalization (Pool) and
---        not Pool_Needs_Finalization (Pool));
+   procedure Unchecked_Deallocate_Subpool
+     (Subpool : in out Subpool_Handle);
+   pragma Postcondition
+     (not Objects_Need_Finalization (Subpool));
+
    pragma Compile_Time_Warning
-     (Ada2012_Warnings, "For Ada 2012, use post'class");
+     (Ada2012_Warnings, "For Ada 2012, use post");
    --  This call must have the effect of calling Unchecked_Deallocate_Objects
    --  for the specified Pool, and then releases all resources associated with
    --  the pools storage to the system, if possible. Whether or not new
@@ -122,23 +137,130 @@ package Dynamic_Pools is
    --  involve new storage being to be allocated to the pool.
 
    function Objects_Need_Finalization
-     (Pool : Dynamic_Pool'Class) return Boolean;
-   pragma Compile_Time_Warning
-     (Ada2012_Warnings,
-      "For Ada 2012, use in out parameter instead of access");
+     (Subpool : Subpool_Handle) return Boolean;
    --  Returns true if there are objects allocated from the pool that have
-   --  not been deallocated and need finalization. This is class-wide because
-   --  we don't want derivations to override this function possibly changing
-   --  the effect of this call.
+   --  not been deallocated and need finalization.
 
-   function Pool_Needs_Finalization
-     (Pool : Dynamic_Pool) return Boolean is abstract;
-   --  Returns true if the Pool needs finalization, false otherwise.
+   overriding
+   function Default_Subpool_for_Pool
+     (Pool : Dynamic_Pool) return not null Subpool_Handle;
+
+   type Scope_Bomb (Subpool : Subpool_Handle) is new
+     Ada.Finalization.Limited_Controlled with private;
+   --  Calls Unchecked_Deallocate_Subpool during finalization
+
+   generic
+      type Allocation_Type is private;
+      type Allocation_Type_Access is access Allocation_Type;
+   function Allocation
+     (Subpool : Subpool_Handle) return Allocation_Type_Access;
+   pragma Compile_Time_Warning
+     (Ada2012_Warnings, "For Ada 2012, eliminate this generic");
+   --  This generic routine provides a mechanism to allocate an object of
+   --  a definite subtype from a pool.
+   --  The "new" has to be associated with the root storage pool, and currently
+   --  there is no way to override the storage pool object for the "new"
+   --  operator.
+   --
+   --  This function allows the storage pool object to be specified for an
+   --  allocation.
+
+   generic
+      type Allocation_Type is private;
+      type Allocation_Type_Access is access Allocation_Type;
+   function Initialized_Allocation
+     (Subpool : Subpool_Handle;
+      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
+   pragma Compile_Time_Warning
+     (Ada2012_Warnings, "For Ada 2012, eliminate this generic");
+   --  This generic routine provides a mechanism to allow an object of an
+   --  indefinite subtype, or a qualified expression from a pool.
+   --  The "new" has to be associated with the root storage pool, and currently
+   --  there is no way to override the storage pool object for the "new"
+   --  operator.
+   --
+   --  This function allows the storage pool object to be specified for an
+   --  allocation.
 
 private
 
-   type Dynamic_Pool is abstract new
-     System.Storage_Pools.Root_Storage_Pool with null record;
+   use System;
+
+   type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
+
+   package Storage_Vector is new
+     Ada.Containers.Vectors (Index_Type => Positive,
+                             Element_Type => Storage_Array_Access);
+
+   type Dynamic_Subpool;
+   type Dynamic_Subpool_Access is access all Dynamic_Subpool;
+--   type Access_To_Subpool_Access is access all Dynamic_Subpool_Access;
+
+   package Subpool_Vector is new
+     Ada.Containers.Vectors (Index_Type => Positive,
+                             Element_Type => Dynamic_Subpool_Access);
+
+   protected type Subpool_Set is
+      procedure Add (Subpool : Dynamic_Subpool_Access);
+      procedure Delete (Subpool : Dynamic_Subpool_Access);
+      procedure Deallocate_All;
+      function Get_Default_Subpool return Subpool_Handle;
+   private
+      Subpools : Subpool_Vector.Vector;
+   end Subpool_Set;
+
+   type Dynamic_Subpool is new Root_Subpool with
+      record
+         Used_List : Storage_Vector.Vector;
+         Free_List : Storage_Vector.Vector;
+         Active : Storage_Array_Access;
+         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Owner : Ada.Task_Identification.Task_Id;
+         Deallocate_Storage : Boolean;
+      end record;
+
+   type Dynamic_Pool
+     (Minimum_Allocation : System.Storage_Elements.Storage_Count) is
+     new Root_Storage_Pool_with_Subpools with
+      record
+         Default_Subpool : Subpool_Handle;
+         Subpools : Subpool_Set;
+      end record;
+
+   overriding
+   procedure Allocate
+     (Pool : in out Dynamic_Pool;
+      Storage_Address : out Address;
+      Size_In_Storage_Elements : Storage_Elements.Storage_Count;
+      Alignment : Storage_Elements.Storage_Count);
+
+   overriding
+   procedure Allocate_From_Subpool
+     (Pool : in out Dynamic_Pool;
+      Storage_Address : out Address;
+      Size_In_Storage_Elements : Storage_Elements.Storage_Count;
+      Alignment : Storage_Elements.Storage_Count;
+      Subpool : -- not null
+      Subpool_Handle);
+   pragma Precondition
+     (Is_Owner (Subpool, Current_Task));
+
+   overriding procedure Deallocate_Subpool
+     (Pool : in out Dynamic_Pool;
+      Subpool : in out Subpool_Handle);
+   --  with Pre'Class => Pool_of_Subpool(Subpool) = Pool'access
+   --  Deallocate the space for all of the objects allocated from the
+   --  specified subpool, and destroy the subpool. The subpool handle
+   --  is set to null after this call.
+
+   overriding procedure Initialize (Pool : in out Dynamic_Pool);
+
+   overriding procedure Finalize   (Pool : in out Dynamic_Pool);
+
+   type Scope_Bomb (Subpool : Subpool_Handle) is new
+     Ada.Finalization.Limited_Controlled with null record;
+
+   overriding procedure Finalize   (Scope : in out Scope_Bomb);
 
    pragma Inline
      (Unchecked_Deallocate_Objects,

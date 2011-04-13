@@ -55,13 +55,16 @@
 --  Pete Kovac.
 
 with Trees;                  use Trees;
-with Dynamic_Pools.Subpools; use Dynamic_Pools;
+with Dynamic_Pools;          use Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 procedure Binary_Trees is
+
+   Pool : aliased Dynamic_Pools.Dynamic_Pool
+     (Minimum_Allocation => 16#3FF#);
 
    function Get_Depth return Positive is
    begin
@@ -115,27 +118,29 @@ procedure Binary_Trees is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Pool : Subpools.Dynamic_Pool_With_Subpools
-                 (Mode => Subpools.Auto_Unchecked_Deallocation,
-                  Declaring_Task_Is_Owner => True);
+               Short_Lived_Subpool : constant Subpool_Handle
+                 := Create_Subpool (Pool'Access);
+               Bomb : Scope_Bomb (Short_Lived_Subpool);
+               pragma Unreferenced (Bomb);
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Tree_Node;
             begin
 
                Short_Lived_Tree_1 :=
                  Create
-                   (Short_Lived_Pool,
+                   (Short_Lived_Subpool,
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Create
-                    (Short_Lived_Pool,
+                    (Short_Lived_Subpool,
                      Item  => -I,
                      Depth => Depth);
 
                Check := Check +
                  Item_Check (Short_Lived_Tree_1) +
                  Item_Check (Short_Lived_Tree_2);
+
             end;
          end loop;
 
@@ -172,10 +177,6 @@ procedure Binary_Trees is
       end return;
    end Create_Worker;
 
-   Long_Lived_Node_Pool : aliased Subpools.Dynamic_Pool_With_Subpools
-     (Mode => Subpools.Auto_Unchecked_Deallocation,
-      Declaring_Task_Is_Owner => True);
-
    Long_Lived_Tree      : Tree_Node;
 
    Check : Integer;
@@ -191,12 +192,12 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Pool : Subpools.Dynamic_Pool_With_Subpools
-           (Mode => Subpools.Auto_Unchecked_Deallocation,
-            Declaring_Task_Is_Owner => True);
+         Subpool : constant Subpool_Handle := Create_Subpool (Pool'Access);
+         Bomb : Scope_Bomb (Subpool);
+         pragma Unreferenced (Bomb);
 
          Stretch_Tree : constant Tree_Node :=
-           Trees.Create (Pool  => Pool,
+           Trees.Create (Subpool  => Subpool,
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
@@ -212,8 +213,7 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpools.Dynamic_Pool_With_Subpools :=
-           Subpools.Create_Subpool (Parent => Long_Lived_Node_Pool'Access);
+         Subpool : constant Subpool_Handle := Pool.Create_Subpool;
       begin
          Long_Lived_Tree := Create (Subpool, 0, Max_Depth);
       end Create_Long_Lived_Tree_Task;

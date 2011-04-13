@@ -47,12 +47,13 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
-with Dynamic_Pools.Subpools; use Dynamic_Pools;
+with Dynamic_Pools;          use Dynamic_Pools;
 with Trees.Creation;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Task_Identification; use Ada.Task_Identification;
 
 procedure Binary_Trees is
 
@@ -109,9 +110,8 @@ procedure Binary_Trees is
          for I in 1 .. Iterations loop
             declare
 
-               Short_Lived_Pool : Subpools.Dynamic_Pool_With_Subpools
-                 (Mode => Subpools.Auto_Unchecked_Deallocation,
-                  Declaring_Task_Is_Owner => True);
+               Short_Lived_Pool : Dynamic_Pool
+                 (Minimum_Allocation => 16#3ff#);
 
                type Short_Lived_Tree_Node is access Trees.Tree_Node;
                for Short_Lived_Tree_Node'Storage_Pool use Short_Lived_Pool;
@@ -171,9 +171,8 @@ procedure Binary_Trees is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree_Pool : Subpools.Dynamic_Pool_With_Subpools
-     (Mode => Subpools.Auto_Unchecked_Deallocation,
-      Declaring_Task_Is_Owner => False);
+   Long_Lived_Tree_Pool : aliased Dynamic_Pool
+     (Minimum_Allocation => 16#3FF#);
 
    type Long_Lived_Tree_Node is access Trees.Tree_Node;
    for Long_Lived_Tree_Node'Storage_Pool use Long_Lived_Tree_Pool;
@@ -186,6 +185,7 @@ procedure Binary_Trees is
    Check : Integer;
 
 begin
+   Set_Owner (Long_Lived_Tree_Pool.Default_Subpool_for_Pool, Null_Task_Id);
 
    --  Do the stretch tree processing at the same time that the long lived
    --  tree is being created.
@@ -197,9 +197,8 @@ begin
 
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Stretch_Pool : Subpools.Dynamic_Pool_With_Subpools
-           (Mode => Subpools.Auto_Unchecked_Deallocation,
-            Declaring_Task_Is_Owner => True);
+         Stretch_Pool : Dynamic_Pool
+           (Minimum_Allocation => 16#3FF#);
 
          type Stretch_Node is access Trees.Tree_Node;
          for Stretch_Node'Storage_Pool use Stretch_Pool;
@@ -223,7 +222,7 @@ begin
 
       task body Create_Long_Lived_Tree_Task is
       begin
-         Subpools.Set_Owner (Long_Lived_Tree_Pool);
+         Set_Owner (Long_Lived_Tree_Pool.Default_Subpool_for_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
       end Create_Long_Lived_Tree_Task;
    begin
