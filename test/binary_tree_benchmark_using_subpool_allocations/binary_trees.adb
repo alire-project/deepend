@@ -118,22 +118,20 @@ procedure Binary_Trees is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : constant Subpool_Handle
+               Short_Lived_Subpool : constant Scoped_Subpool_Handle
                  := Create_Subpool (Pool'Access);
-               Bomb : Scope_Bomb (Short_Lived_Subpool);
-               pragma Unreferenced (Bomb);
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Tree_Node;
             begin
 
                Short_Lived_Tree_1 :=
                  Create
-                   (Short_Lived_Subpool,
+                   (Short_Lived_Subpool.Handle,
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Create
-                    (Short_Lived_Subpool,
+                    (Short_Lived_Subpool.Handle,
                      Item  => -I,
                      Depth => Depth);
 
@@ -192,12 +190,11 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : constant Subpool_Handle := Create_Subpool (Pool'Access);
-         Bomb : Scope_Bomb (Subpool);
-         pragma Unreferenced (Bomb);
+         Subpool : constant Scoped_Subpool_Handle :=
+           Create_Subpool (Pool'Access);
 
          Stretch_Tree : constant Tree_Node :=
-           Trees.Create (Subpool  => Subpool,
+           Trees.Create (Subpool  => Subpool.Handle,
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin

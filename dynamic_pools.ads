@@ -50,6 +50,20 @@
 --  provide a solution written entirely in Ada.
 
 --  with System.Storage_Elements;
+
+--  Allocation strategy:
+--
+--    Deallocate is not needed or used, and is implemented as a null
+--    procedure. Use of this storage pool means that there is no need for
+--    calls to Ada.Unchecked_Deallocation.
+--
+--  ** NOTE: It is erroneous to allocate objects that need finalization
+--  eg. (Tasks, or objects of types inherited from types defined in
+--       Ada.Finalization)
+--  and then Release the storage associated with those objects before
+--  they would have otherwise been finalized. Ada 2012 is proposing to
+--  provide facilities that would allow such early finalization.
+
 with Sys.Storage_Pools.Subpools; use Sys.Storage_Pools.Subpools; use Sys;
 with Ada.Task_Identification; use Ada.Task_Identification;
 with Ada.Finalization;
@@ -59,25 +73,25 @@ private with Ada.Containers.Vectors;
 
 package Dynamic_Pools is
    pragma Elaborate_Body;
+   --  Needed to ensure that library routines can execute allocators
 
    Ada2012_Warnings : constant Boolean := False;
 
-   --  Needed to ensure that library routines can execute allocators
+   package Scoped_Subpools is
 
-   --  Allocation strategy:
+      type Scoped_Subpool_Handle (Handle : Subpool_Handle) is new
+        Ada.Finalization.Limited_Controlled with null record;
+       --  Calls Unchecked_Deallocate_Subpool during finalization
 
-   --    Deallocate is not needed or used, and is implemented as a null
-   --    procedure. Use of this storage pool means that there is no need for
-   --    calls to Ada.Unchecked_Deallocation.
-   --
-   --  ** NOTE: It is erroneous to allocate objects that need finalization
-   --  eg. (Tasks, or objects of types inherited from types defined in
-   --       Ada.Finalization)
-   --  and then Release the storage associated with those objects before
-   --  they would have otherwise been finalized. Ada 2012 is proposing to
-   --  provide facilities that would allow such early finalization.
+   private
+
+      overriding
+       procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle);
+
+   end Scoped_Subpools;
 
    subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
+   subtype Scoped_Subpool_Handle is Scoped_Subpools.Scoped_Subpool_Handle;
 
    type Dynamic_Pool
      (Minimum_Allocation : System.Storage_Elements.Storage_Count) is
@@ -88,6 +102,9 @@ package Dynamic_Pools is
 
    function Create_Subpool
      (Pool : access Dynamic_Pool) return not null Subpool_Handle;
+
+   function Create_Subpool
+     (Pool : access Dynamic_Pool) return Scoped_Subpool_Handle;
 
    function Is_Owner
      (Subpool : not null Subpool_Handle;
@@ -144,10 +161,6 @@ package Dynamic_Pools is
    overriding
    function Default_Subpool_for_Pool
      (Pool : Dynamic_Pool) return not null Subpool_Handle;
-
-   type Scope_Bomb (Subpool : Subpool_Handle) is new
-     Ada.Finalization.Limited_Controlled with private;
-   --  Calls Unchecked_Deallocate_Subpool during finalization
 
    generic
       type Allocation_Type is private;
@@ -245,7 +258,8 @@ private
    pragma Precondition
      (Is_Owner (Subpool, Current_Task));
 
-   overriding procedure Deallocate_Subpool
+   overriding
+   procedure Deallocate_Subpool
      (Pool : in out Dynamic_Pool;
       Subpool : in out Subpool_Handle);
    --  with Pre'Class => Pool_of_Subpool(Subpool) = Pool'access
@@ -253,14 +267,11 @@ private
    --  specified subpool, and destroy the subpool. The subpool handle
    --  is set to null after this call.
 
-   overriding procedure Initialize (Pool : in out Dynamic_Pool);
+   overriding
+   procedure Initialize (Pool : in out Dynamic_Pool);
 
-   overriding procedure Finalize   (Pool : in out Dynamic_Pool);
-
-   type Scope_Bomb (Subpool : Subpool_Handle) is new
-     Ada.Finalization.Limited_Controlled with null record;
-
-   overriding procedure Finalize   (Scope : in out Scope_Bomb);
+   overriding
+   procedure Finalize   (Pool : in out Dynamic_Pool);
 
    pragma Inline
      (Unchecked_Deallocate_Objects,

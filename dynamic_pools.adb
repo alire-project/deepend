@@ -223,7 +223,20 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Deallocate_Subpool
+   function Create_Subpool
+     (Pool : access Dynamic_Pool) return Scoped_Subpool_Handle
+   is
+      New_Subpool : constant Subpool_Handle := Create_Subpool (Pool);
+   begin
+      return  Result : Scoped_Subpool_Handle (Handle => New_Subpool) do
+         null;
+      end return;
+   end Create_Subpool;
+
+   --------------------------------------------------------------
+
+   overriding
+   procedure Deallocate_Subpool
      (Pool : in out Dynamic_Pool;
       Subpool : in out Subpool_Handle)
    is
@@ -267,7 +280,8 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding function Default_Subpool_for_Pool
+   overriding
+   function Default_Subpool_for_Pool
      (Pool : Dynamic_Pool)
       return not null Subpool_Handle is
    begin
@@ -276,18 +290,22 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Finalize   (Pool : in out Dynamic_Pool) is
+   overriding
+   procedure Finalize   (Pool : in out Dynamic_Pool) is
    begin
       Pool.Subpools.Deallocate_All;
    end Finalize;
 
    --------------------------------------------------------------
 
-   overriding procedure Finalize   (Scope : in out Scope_Bomb) is
-      Subpool : Subpool_Handle := Scope.Subpool;
-   begin
-      Unchecked_Deallocate_Subpool (Subpool);
-   end Finalize;
+   package body Scoped_Subpools is
+      overriding
+      procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle) is
+         Subpool : Subpool_Handle := Scoped_Subpool.Handle;
+      begin
+         Unchecked_Deallocate_Subpool (Subpool);
+      end Finalize;
+   end Scoped_Subpools;
 
    --------------------------------------------------------------
 

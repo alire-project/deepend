@@ -1,5 +1,10 @@
 Deepend Version History.
 
+deepend-2.1
+- Renamed Scope_Bomb type to Scoped_Subpool_Handle
+- Added Create_Subpool call that returns a Scoped_Subpool_Handle
+- Changed binary tree test code to use Scoped_Subpool_Handles
+
 deepend-2.0
 - Major redesign to work with the Ada 2012 described in AI05-0111-3.
 - Subpools can no longer have subpools. This did not seem to be necessary
