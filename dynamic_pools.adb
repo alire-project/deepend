@@ -51,10 +51,19 @@ package body Dynamic_Pools is
       procedure Deallocate_All
       is
          procedure Deallocate_Pools (Position : Subpool_Vector.Cursor) is
-            Subpool : Subpool_Handle := Subpool_Vector.Element
-              (Position).all'Access;
+            Subpool : Dynamic_Subpool_Access :=
+              Subpool_Vector.Element (Position);
          begin
-            Unchecked_Deallocate_Subpool (Subpool);
+
+            Subpool.Used_List.Iterate
+              (Process => Free_Storage_Element'Access);
+
+            Subpool.Free_List.Iterate
+              (Process => Free_Storage_Element'Access);
+
+            Free_Storage_Array (Subpool.Active);
+
+            Free_Subpool (Subpool);
          end Deallocate_Pools;
       begin
          Subpools.Iterate (Deallocate_Pools'Access);
@@ -363,7 +372,7 @@ package body Dynamic_Pools is
    --  protected objects and type derived types defined in Ada.Finalization
    --  from a dynamic pool.
 
-      --  Copy : Subpool_Handle := Subpool;
+      Copy : Subpool_Handle := Subpool;
 
    begin
 
@@ -371,6 +380,10 @@ package body Dynamic_Pools is
       --  the objects will be freed.
       Dynamic_Subpool
         (Subpool.all).Deallocate_Storage := False;
+
+      --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist currently,
+      --  dispatch to Deallocate_Subpool directly for now.
+      Pool_of_Subpool (Subpool).Deallocate_Subpool (Copy);
 
       --  As per AI05-0111-3
       --  Ada.Unchecked_Deallocate_Subpool (Copy);
@@ -387,6 +400,10 @@ package body Dynamic_Pools is
       --  Set the flag that prevents the subpool storage from being freed. Only
       --  the objects will be freed.
       Dynamic_Subpool (Subpool.all).Deallocate_Storage := True;
+
+      --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist currently,
+      --  dispatch to Deallocate_Subpool directly for now.
+      Pool_of_Subpool (Subpool).Deallocate_Subpool (Subpool);
 
       --  As per AI05-0111-3
       --  Ada.Unchecked_Deallocate_Subpool (Subpool);
