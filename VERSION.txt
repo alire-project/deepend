@@ -1,5 +1,16 @@
 Deepend Version History.
 
+deepend-2.2
+- Since Ada.Unchecked_Deallocate_Subpool doesn't exist, 
+  Unchecked_Deallocate_Subpool and Unchecked_Deallocate_Objects need to 
+  get same effect, by dispatching to Deallocate_Subpool. 
+  Otherwise, these routine aren't doing anything. Once that is done, it 
+  exposed a bug. The finalization of the pool cannot call 
+  Unchecked_Deallocate_Subpool, because that leaves the protected object, 
+  then tries to regain access to the protected object on the dispatching, 
+  which leads to a deadlock. This bug was fixed, by simply calling code that
+  frees the subpool objects.
+
 deepend-2.1
 - Renamed Scope_Bomb type to Scoped_Subpool_Handle
 - Added Create_Subpool call that returns a Scoped_Subpool_Handle
