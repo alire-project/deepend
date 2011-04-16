@@ -1,5 +1,13 @@
 Deepend Version History.
 
+deepend-2.3
+- Since removing the bindings to the Apache Run Time pool library in
+  the earlier deepend-1.1 version, deepend has been running much more
+  slowly than the Apache Binding version, due to a logic error.
+  Now the binary tree tests outperform the Apache runtime binding version. 
+  e.g. For depth 20, the Apache version takes about 4.6 seconds to run.
+  This new deepend version takes about 3.8 seconds to run. 
+
 deepend-2.2
 - Since Ada.Unchecked_Deallocate_Subpool doesn't exist, 
   Unchecked_Deallocate_Subpool and Unchecked_Deallocate_Objects need to 
