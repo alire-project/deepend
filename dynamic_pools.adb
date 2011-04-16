@@ -112,7 +112,7 @@ package body Dynamic_Pools is
    begin
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements <
+      if Size_In_Storage_Elements >
         Sub.Active'Length - Sub.Next_Allocation then
 
          Sub.Used_List.Append (New_Item => Sub.Active);
@@ -123,8 +123,8 @@ package body Dynamic_Pools is
             Sub.Free_List.Delete_First;
          else
             Sub.Active := new System.Storage_Elements.Storage_Array
-              (1 .. System.Storage_Elements.Storage_Count'Max
-                 (Size_In_Storage_Elements, Pool.Minimum_Allocation));
+              (1 .. Storage_Elements.Storage_Count'Max
+                 (Size_In_Storage_Elements, Sub.Block_Size));
          end if;
 
          Sub.Next_Allocation := Sub.Active'First;
@@ -148,7 +148,7 @@ package body Dynamic_Pools is
       use type System.Storage_Elements.Storage_Offset;
    begin
 
-      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
       pragma Compile_Time_Warning
         (Ada2012_Warnings,
          "In Ada 2012, this should be a precondition");
@@ -165,57 +165,30 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Initialized_Allocation
-     (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type)
-      return Allocation_Type_Access
-   is
-      Location : System.Address;
-
-      function Convert is new Ada.Unchecked_Conversion
-        (Source => System.Address,
-         Target => Allocation_Type_Access);
-
-      use type System.Storage_Elements.Storage_Offset;
-
-   begin
-
-      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
-      pragma Compile_Time_Warning
-        (Ada2012_Warnings,
-         "In Ada 2012, this should be a precondition");
-
-      Pool_of_Subpool (Subpool).Allocate_From_Subpool
-        (Storage_Address => Location,
-         Size_In_Storage_Elements =>
-           Qualified_Expression'Size /
-             System.Storage_Elements.Storage_Element'Size,
-         Alignment => Allocation_Type'Alignment,
-         Subpool => Subpool);
-
-      declare
-         Result : constant Allocation_Type_Access := Convert (Location);
-      begin
-         Result.all := Qualified_Expression;
-         return Result;
-      end;
-
-   end Initialized_Allocation;
-
-  --------------------------------------------------------------
-
+   overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return not null Subpool_Handle
+     (Pool : access Dynamic_Pool) return not null Subpool_Handle is
+   begin
+      return Create_Subpool (Pool, Pool.Default_Block_Size);
+   end Create_Subpool;
+
+   not overriding
+   function Create_Subpool
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count)
+      return not null Subpool_Handle
    is
-      New_Pool : constant Dynamic_Subpool_Access := new Dynamic_Subpool'
-        (Root_Subpool with
-         Used_List => <>,
-         Free_List => <>,
-         Active => new System.Storage_Elements.Storage_Array
-           (1 .. Pool.Minimum_Allocation),
-         Next_Allocation => 1,
-         Owner => Ada.Task_Identification.Current_Task,
-         Deallocate_Storage => True);
+      New_Pool : constant Dynamic_Subpool_Access
+        := new Dynamic_Subpool'
+          (Root_Subpool with
+           Block_Size => Block_Size,
+           Used_List => <>,
+           Free_List => <>,
+           Active => new System.Storage_Elements.Storage_Array
+             (1 .. Block_Size),
+           Next_Allocation => 1,
+           Owner => Ada.Task_Identification.Current_Task,
+           Deallocate_Storage => True);
 
       Result : constant Subpool_Handle := New_Pool.all'Unchecked_Access;
    begin
@@ -233,9 +206,12 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return Scoped_Subpool_Handle
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count :=
+        Default_Allocation_Block_Size) return Scoped_Subpool_Handle
    is
-      New_Subpool : constant Subpool_Handle := Create_Subpool (Pool);
+      New_Subpool : constant Subpool_Handle :=
+        Create_Subpool (Pool, Block_Size);
    begin
       return  Result : Scoped_Subpool_Handle (Handle => New_Subpool) do
          null;
@@ -333,6 +309,45 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
+   function Initialized_Allocation
+     (Subpool : Subpool_Handle;
+      Qualified_Expression : Allocation_Type)
+      return Allocation_Type_Access
+   is
+      Location : System.Address;
+
+      function Convert is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Allocation_Type_Access);
+
+      use type System.Storage_Elements.Storage_Offset;
+
+   begin
+
+      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      pragma Compile_Time_Warning
+        (Ada2012_Warnings,
+         "In Ada 2012, this should be a precondition");
+
+      Pool_of_Subpool (Subpool).Allocate_From_Subpool
+        (Storage_Address => Location,
+         Size_In_Storage_Elements =>
+           Qualified_Expression'Size /
+             System.Storage_Elements.Storage_Element'Size,
+         Alignment => Allocation_Type'Alignment,
+         Subpool => Subpool);
+
+      declare
+         Result : constant Allocation_Type_Access := Convert (Location);
+      begin
+         Result.all := Qualified_Expression;
+         return Result;
+      end;
+
+   end Initialized_Allocation;
+
+   --------------------------------------------------------------
+
    function Is_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task) return Boolean is
@@ -389,6 +404,8 @@ package body Dynamic_Pools is
       --  Ada.Unchecked_Deallocate_Subpool (Copy);
       --  In this case, Copy will not be set to null after this call
    end Unchecked_Deallocate_Objects;
+
+   --------------------------------------------------------------
 
    procedure Unchecked_Deallocate_Subpool
      (Subpool : in out Subpool_Handle) is

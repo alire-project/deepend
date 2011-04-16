@@ -117,4 +117,7 @@ private
    type Root_Subpool is abstract tagged limited record
       Pool : access Root_Storage_Pool_with_Subpools'Class;
    end record;
+
+   pragma Inline (Pool_of_Subpool, Allocate, Set_Pool_of_Subpool);
+   pragma Inline (Storage_Size, Default_Subpool_for_Pool);
 end Sys.Storage_Pools.Subpools;

@@ -67,7 +67,7 @@
 with Sys.Storage_Pools.Subpools; use Sys.Storage_Pools.Subpools; use Sys;
 with Ada.Task_Identification; use Ada.Task_Identification;
 with Ada.Finalization;
-with System.Storage_Elements;
+with System.Storage_Elements; use System;
 
 private with Ada.Containers.Vectors;
 
@@ -93,18 +93,28 @@ package Dynamic_Pools is
    subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
    subtype Scoped_Subpool_Handle is Scoped_Subpools.Scoped_Subpool_Handle;
 
-   type Dynamic_Pool
-     (Minimum_Allocation : System.Storage_Elements.Storage_Count) is
+   type Dynamic_Pool (Default_Block_Size : Storage_Elements.Storage_Count) is
      new Storage_Pools.Subpools.Root_Storage_Pool_with_Subpools
    with private;
    pragma Compile_Time_Warning
      (Ada_2012_Warnings, "In Ada 2012, use 4096 as default discriminant");
 
+   overriding
    function Create_Subpool
      (Pool : access Dynamic_Pool) return not null Subpool_Handle;
 
+   Default_Allocation_Block_Size : constant := 16#FFFF#;
+
+   not overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return Scoped_Subpool_Handle;
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count)
+      return not null Subpool_Handle;
+
+   function Create_Subpool
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count :=
+        Default_Allocation_Block_Size) return Scoped_Subpool_Handle;
 
    function Is_Owner
      (Subpool : not null Subpool_Handle;
@@ -115,17 +125,17 @@ package Dynamic_Pools is
    procedure Set_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task);
-   pragma Precondition
-     ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
-      or else (Is_Owner (Subpool) and then T = Null_Task_Id));
-   pragma Postcondition (Is_Owner (Subpool, T));
+   --  pragma Precondition
+   --    ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
+   --     or else (Is_Owner (Subpool) and then T = Null_Task_Id));
+   --  pragma Postcondition (Is_Owner (Subpool, T));
    --  The task that owns a pool/subpool and therefore allowed to allocate
    --  from it, can only be specified once for a particular pool.
 
    procedure Unchecked_Deallocate_Objects
      (Subpool : Subpool_Handle);
-   pragma Postcondition
-     (not Objects_Need_Finalization (Subpool));
+   --  pragma Postcondition
+   --    (not Objects_Need_Finalization (Subpool));
    pragma Compile_Time_Warning
      (Ada2012_Warnings, "For Ada 2012, this should be Post'Class");
    --  This call performs unchecked storage deallocation of all objects
@@ -140,8 +150,8 @@ package Dynamic_Pools is
 
    procedure Unchecked_Deallocate_Subpool
      (Subpool : in out Subpool_Handle);
-   pragma Postcondition
-     (not Objects_Need_Finalization (Subpool));
+   --  pragma Postcondition
+   --    (not Objects_Need_Finalization (Subpool));
 
    pragma Compile_Time_Warning
      (Ada2012_Warnings, "For Ada 2012, use post");
@@ -197,8 +207,6 @@ package Dynamic_Pools is
 
 private
 
-   use System;
-
    type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
 
    package Storage_Vector is new
@@ -222,7 +230,8 @@ private
       Subpools : Subpool_Vector.Vector;
    end Subpool_Set;
 
-   type Dynamic_Subpool is new Root_Subpool with
+   type Dynamic_Subpool
+     (Block_Size : Storage_Elements.Storage_Count) is new Root_Subpool with
       record
          Used_List : Storage_Vector.Vector;
          Free_List : Storage_Vector.Vector;
@@ -232,8 +241,7 @@ private
          Deallocate_Storage : Boolean;
       end record;
 
-   type Dynamic_Pool
-     (Minimum_Allocation : System.Storage_Elements.Storage_Count) is
+   type Dynamic_Pool (Default_Block_Size : Storage_Elements.Storage_Count) is
      new Root_Storage_Pool_with_Subpools with
       record
          Default_Subpool : Subpool_Handle;
@@ -255,8 +263,8 @@ private
       Alignment : Storage_Elements.Storage_Count;
       Subpool : -- not null
       Subpool_Handle);
-   pragma Precondition
-     (Is_Owner (Subpool, Current_Task));
+--   pragma Precondition
+--     (Is_Owner (Subpool, Current_Task));
 
    overriding
    procedure Deallocate_Subpool
@@ -275,6 +283,7 @@ private
 
    pragma Inline
      (Unchecked_Deallocate_Objects,
-      Objects_Need_Finalization);
+      Objects_Need_Finalization, Allocate, Default_Subpool_for_Pool,
+      Initialize, Finalize, Is_Owner, Objects_Need_Finalization, Set_Owner);
 
 end Dynamic_Pools;

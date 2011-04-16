@@ -53,6 +53,8 @@ with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with System.Storage_Elements; use System.Storage_Elements;
+with System.Task_Info;
 with Ada.Task_Identification; use Ada.Task_Identification;
 
 procedure Binary_Trees is
@@ -71,8 +73,21 @@ procedure Binary_Trees is
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
       else
-         --  This seems to be the sweet spot assuming max depth of 20
-         return 5;
+         --  A max depth of 20 involves 9 iterations. These values are
+         --  optimal for 9 iterations.
+         case System.Task_Info.Number_Of_Processors is
+            when 1 =>
+               return 1;
+
+            when 2 =>
+               return 3;
+
+            when 4 =>
+               return 5;
+
+            when others =>
+               return 5;
+         end case;
       end if;
    end Get_Worker_Count;
 
@@ -111,7 +126,8 @@ procedure Binary_Trees is
             declare
 
                Short_Lived_Pool : Dynamic_Pool
-                 (Minimum_Allocation => 16#3ff#);
+                 (Default_Block_Size =>
+                    2 * (2 ** (Depth + 1)) * Trees.Node_Size);
 
                type Short_Lived_Tree_Node is access Trees.Tree_Node;
                for Short_Lived_Tree_Node'Storage_Pool use Short_Lived_Pool;
@@ -172,7 +188,7 @@ procedure Binary_Trees is
    end Create_Worker;
 
    Long_Lived_Tree_Pool : aliased Dynamic_Pool
-     (Minimum_Allocation => 16#3FF#);
+     (Default_Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
 
    type Long_Lived_Tree_Node is access Trees.Tree_Node;
    for Long_Lived_Tree_Node'Storage_Pool use Long_Lived_Tree_Pool;
@@ -198,7 +214,7 @@ begin
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
          Stretch_Pool : Dynamic_Pool
-           (Minimum_Allocation => 16#3FF#);
+           (Default_Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
 
          type Stretch_Node is access Trees.Tree_Node;
          for Stretch_Node'Storage_Pool use Stretch_Pool;

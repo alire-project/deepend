@@ -42,14 +42,6 @@
 --     - the measurements may be very different with a larger initial heap
 --       size or GC tuning.
 --
---  Please don't implement your own custom memory pool or free list.
---  **** Note: The intent here is to not use a special customized memory pool
---  to solve this problem, but using another general purpose memory pool is OK.
---  This version of the code uses Deepend, which is a memory pool wrapper
---  for the Apache Runtime Pool. The version of code actually submitted for
---  benchmark does not use Deepend, but instead uses low-level direct bindings
---  to the APR pools library.
---
 --  The binary-trees benchmark is a simplistic adaptation of Hans Boehm's
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
@@ -60,11 +52,10 @@ with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with System.Storage_Elements; use System.Storage_Elements;
+with System.Task_Info;
 
 procedure Binary_Trees is
-
-   Pool : aliased Dynamic_Pools.Dynamic_Pool
-     (Minimum_Allocation => 16#3FF#);
 
    function Get_Depth return Positive is
    begin
@@ -80,10 +71,26 @@ procedure Binary_Trees is
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
       else
-         --  This seems to be the sweet spot assuming max depth of 20
-         return 5;
+         --  A max depth of 20 involves 9 iterations. These values are
+         --  optimal for 9 iterations.
+         case System.Task_Info.Number_Of_Processors is
+            when 1 =>
+               return 1;
+
+            when 2 =>
+               return 3;
+
+            when 4 =>
+               return 5;
+
+            when others =>
+               return 5;
+         end case;
       end if;
    end Get_Worker_Count;
+
+   Pool : aliased Dynamic_Pools.Dynamic_Pool
+     (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
 
    Min_Depth     : constant := 4;
    Requested_Depth : constant Positive := Get_Depth;
@@ -119,7 +126,9 @@ procedure Binary_Trees is
          for I in 1 .. Iterations loop
             declare
                Short_Lived_Subpool : constant Scoped_Subpool_Handle
-                 := Create_Subpool (Pool'Access);
+                 := Create_Subpool
+                   (Pool => Pool'Access,
+                    Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Tree_Node;
             begin
 
@@ -191,7 +200,9 @@ begin
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
          Subpool : constant Scoped_Subpool_Handle :=
-           Create_Subpool (Pool'Access);
+           Create_Subpool
+             (Pool => Pool'Access,
+              Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
 
          Stretch_Tree : constant Tree_Node :=
            Trees.Create (Subpool  => Subpool.Handle,
@@ -210,7 +221,10 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle := Pool.Create_Subpool;
+         Subpool : constant Subpool_Handle
+           := Create_Subpool
+             (Pool => Pool'Access,
+              Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
       begin
          Long_Lived_Tree := Create (Subpool, 0, Max_Depth);
       end Create_Long_Lived_Tree_Task;

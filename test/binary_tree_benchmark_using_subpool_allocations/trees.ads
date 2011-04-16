@@ -7,6 +7,7 @@
 --
 --  Contributed by Brad Moore
 with Dynamic_Pools; use Dynamic_Pools;
+with System.Storage_Elements; use System;
 
 package Trees is
 
@@ -18,6 +19,8 @@ package Trees is
       Item : Integer;
       Depth : Integer) return Tree_Node;
 
+   Node_Size : constant Storage_Elements.Storage_Count;
+
 private
 
    type Node;
@@ -28,5 +31,8 @@ private
       Right : Tree_Node;
       Value  : Integer;
    end record;
+
+   Node_Size : constant Storage_Elements.Storage_Count :=
+     Node'Max_Size_In_Storage_Elements;
 
 end Trees;
