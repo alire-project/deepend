@@ -3,7 +3,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 procedure Test_Dynamic_Pools
 is
    Pool : aliased Dynamic_Pools.Dynamic_Pool
-     (Minimum_Allocation => 4_096);
+     (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
 
    subtype Id_String is String (1 .. 10);
    type Id_String_Access is access Id_String;
