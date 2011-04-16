@@ -1,5 +1,14 @@
 Deepend Version History.
 
+deepend-2.4
+- Major update to comments in the code. 
+- Improvement to performance for call Default_Subpool_Of_Pool, avoids 
+  accessing protected object 
+- A Default_Block_Size of 0 on the pool object discriminant causes the 
+  default subpool to not be created 
+- Attempting to allocate from the default storage pool if the pool's 
+  Default_Block_Size is 0 raises Storage_Error
+
 deepend-2.3
 - Since removing the bindings to the Apache Run Time pool library in
   the earlier deepend-1.1 version, deepend has been running much more
