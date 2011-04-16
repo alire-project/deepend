@@ -1,3 +1,8 @@
+--  This is intended to closely map the proposal for Ada 2012 for Storage
+--  Subpools, and represents the package System.Storage_Pools.Subpools as
+--  defined in AI05-0111-3. When Ada 2012 becomes available, this package will
+--  be deleted from Deepend.
+
 package body Sys.Storage_Pools.Subpools is
 
    overriding

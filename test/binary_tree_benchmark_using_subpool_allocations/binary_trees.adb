@@ -57,16 +57,22 @@ with System.Task_Info;
 
 procedure Binary_Trees is
 
+   Default_Depth : constant := 20;
+
    function Get_Depth return Positive is
    begin
       if Argument_Count > 0 then
          return Positive'Value (Argument (1));
       else
-         return 10;
+         return Default_Depth;
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count return Positive is
+   function Get_Worker_Count return Positive
+   is
+      Optimal_Worker_Count_For_1_CPU : constant := 1;
+      Optimal_Worker_Count_For_9_Iterations_And_2_CPUs : constant := 3;
+      Optimal_Worker_Count_For_9_Iterations_And_4_CPUs : constant := 5;
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
@@ -75,22 +81,21 @@ procedure Binary_Trees is
          --  optimal for 9 iterations.
          case System.Task_Info.Number_Of_Processors is
             when 1 =>
-               return 1;
+               return Optimal_Worker_Count_For_1_CPU;
 
             when 2 =>
-               return 3;
+               return Optimal_Worker_Count_For_9_Iterations_And_2_CPUs;
 
             when 4 =>
-               return 5;
+               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
 
             when others =>
-               return 5;
+               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
          end case;
       end if;
    end Get_Worker_Count;
 
-   Pool : aliased Dynamic_Pools.Dynamic_Pool
-     (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
+   Pool : aliased Dynamic_Pools.Dynamic_Pool (Default_Block_Size => 0);
 
    Min_Depth     : constant := 4;
    Requested_Depth : constant Positive := Get_Depth;
@@ -129,6 +134,10 @@ procedure Binary_Trees is
                  := Create_Subpool
                    (Pool => Pool'Access,
                     Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
+               --  Since we know how much storage we need, we might as well
+               --  specify a block size large enough to hold all the objects
+               --  in a single block
+
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Tree_Node;
             begin
 
@@ -203,6 +212,9 @@ begin
            Create_Subpool
              (Pool => Pool'Access,
               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+         --  Since we know how much storage we need, we might as well
+         --  specify a block size large enough to hold all the objects
+         --  in a single block
 
          Stretch_Tree : constant Tree_Node :=
            Trees.Create (Subpool  => Subpool.Handle,
@@ -225,6 +237,9 @@ begin
            := Create_Subpool
              (Pool => Pool'Access,
               Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+         --  Since we know how much storage we need, we might as well
+         --  specify a block size large enough to hold all the objects
+         --  in a single block
       begin
          Long_Lived_Tree := Create (Subpool, 0, Max_Depth);
       end Create_Long_Lived_Tree_Task;

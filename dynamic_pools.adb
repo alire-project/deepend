@@ -15,7 +15,7 @@
 --  useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  --
 --  MERCHANTABILITY  or  FITNESS  FOR  A  PARTICULAR PURPOSE.  See the GNU  --
 --  General Public License for  more details.  You should have  received a  --
---  copy of the GNU General Public License distributed with Paraffin;  see  --
+--  copy of the GNU General Public License distributed with Deepend;  see  --
 --  file  COPYING.  If  not,  write  to  the  Free  Software  Foundation,   --
 --  51 Franklin  Street,  Fifth  Floor, Boston, MA 02110-1301, USA.         --
 --                                                                          --
@@ -43,10 +43,13 @@ package body Dynamic_Pools is
       Name => Dynamic_Subpool_Access);
 
    protected body Subpool_Set is
+
       procedure Add (Subpool : Dynamic_Subpool_Access) is
       begin
          Subpools.Append (Subpool);
       end Add;
+
+      --------------------------------------------------------------
 
       procedure Deallocate_All
       is
@@ -69,6 +72,8 @@ package body Dynamic_Pools is
          Subpools.Iterate (Deallocate_Pools'Access);
       end Deallocate_All;
 
+      --------------------------------------------------------------
+
       procedure Delete (Subpool : Dynamic_Subpool_Access) is
          Position : Subpool_Vector.Cursor;
       begin
@@ -76,19 +81,23 @@ package body Dynamic_Pools is
          Subpools.Delete (Position);
       end Delete;
 
-      function Get_Default_Subpool return Subpool_Handle is
-      begin
-         return Subpools.First_Element.all'Access;
-      end Get_Default_Subpool;
    end Subpool_Set;
+
+   --------------------------------------------------------------
 
    overriding
    procedure Allocate
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count) is
+      Alignment : Storage_Elements.Storage_Count)
+   is
+      use type System.Storage_Elements.Storage_Count;
    begin
+      if Pool.Default_Block_Size = 0 then
+         raise Storage_Error;
+      end if;
+
       Pool.Allocate_From_Subpool
         (Storage_Address,
          Size_In_Storage_Elements,
@@ -105,7 +114,7 @@ package body Dynamic_Pools is
       Subpool : --  not null
       Subpool_Handle)
    is
-      pragma Unreferenced (Alignment);
+      pragma Unreferenced (Alignment, Pool);
       use type System.Storage_Elements.Storage_Offset;
       use type Ada.Containers.Count_Type;
       Sub : Dynamic_Subpool renames Dynamic_Subpool (Subpool.all);
@@ -167,9 +176,15 @@ package body Dynamic_Pools is
 
    overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return not null Subpool_Handle is
+     (Pool : access Dynamic_Pool) return not null Subpool_Handle
+   is
+      use type System.Storage_Elements.Storage_Count;
    begin
-      return Create_Subpool (Pool, Pool.Default_Block_Size);
+      if Pool.Default_Block_Size = 0 then
+         return Create_Subpool (Pool, Default_Allocation_Block_Size);
+      else
+         return Create_Subpool (Pool, Pool.Default_Block_Size);
+      end if;
    end Create_Subpool;
 
    not overriding
@@ -213,9 +228,9 @@ package body Dynamic_Pools is
       New_Subpool : constant Subpool_Handle :=
         Create_Subpool (Pool, Block_Size);
    begin
-      return  Result : Scoped_Subpool_Handle (Handle => New_Subpool) do
-         null;
-      end return;
+      pragma Warnings (Off, "*Result*is not referenced*");
+      return  Result : Scoped_Subpool_Handle (Handle => New_Subpool);
+      pragma Warnings (On, "*Result*is not referenced*");
    end Create_Subpool;
 
    --------------------------------------------------------------
@@ -270,7 +285,7 @@ package body Dynamic_Pools is
      (Pool : Dynamic_Pool)
       return not null Subpool_Handle is
    begin
-      return Pool.Subpools.Get_Default_Subpool;
+      return Pool.Default_Subpool;
    end Default_Subpool_for_Pool;
 
    --------------------------------------------------------------
@@ -302,9 +317,15 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Dynamic_Pool) is
+   overriding procedure Initialize (Pool : in out Dynamic_Pool)
+   is
+      use type System.Storage_Elements.Storage_Count;
    begin
-      Pool.Default_Subpool := Pool.Create_Subpool;
+      if Pool.Default_Block_Size > 0 then
+         Pool.Default_Subpool := Pool.Create_Subpool;
+      else
+         Pool.Default_Subpool := null;
+      end if;
    end Initialize;
 
    --------------------------------------------------------------
@@ -357,18 +378,6 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Objects_Need_Finalization
-     (Subpool : Subpool_Handle) return Boolean is
-      --  See Unchecked_Deallocate_Objects. Since we cannot know this, and
-      --  cant support allocation of objects needing finalization we
-      --  always return false.
-      pragma Unreferenced (Subpool);
-   begin
-      return False;
-   end Objects_Need_Finalization;
-
-   --------------------------------------------------------------
-
    procedure Set_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task) is
@@ -378,7 +387,6 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   pragma Warnings (Off, "*Subpool*not modified*");
    procedure Unchecked_Deallocate_Objects
      (Subpool : Subpool_Handle) is
    --  Currently only the vendor could supply such a routine. Ada 2012
@@ -426,7 +434,5 @@ package body Dynamic_Pools is
       --  Ada.Unchecked_Deallocate_Subpool (Subpool);
 
    end Unchecked_Deallocate_Subpool;
-
-   pragma Warnings (On, "*Subpool*not modified*");
 
 end Dynamic_Pools;

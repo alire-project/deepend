@@ -41,6 +41,9 @@ is
       --  memory for the lifetime of the top level storage pool.
       --  ie. Is is safe to print out the tree after all recursion has
       --  completed.
+      --  However, it is understandable that people might feel queezy about
+      --  this. Ada 2012 will disallow this, as the access type will need
+      --  to have the same accessibility level as the Pool object.
       type String_Access is access String;
       for String_Access'Storage_Pool use Pool;
       Name : constant String_Access :=

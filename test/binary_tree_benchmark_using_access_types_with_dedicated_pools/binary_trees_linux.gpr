@@ -3,7 +3,7 @@ project Binary_Trees_Linux is
    for Object_Dir use "../obj";
    for Exec_Dir use ".";
    for Main use ("binary_trees.adb");
-   for Source_Dirs use (".", "../../");
+   for Source_Dirs use (".", "../../../deepend");
 
    package Builder is
       for Default_Switches ("ada") use ("-j4", "-g");

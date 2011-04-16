@@ -59,16 +59,22 @@ with Ada.Task_Identification; use Ada.Task_Identification;
 
 procedure Binary_Trees is
 
+   Default_Depth : constant := 20;
+
    function Get_Depth return Positive is
    begin
       if Argument_Count > 0 then
          return Positive'Value (Argument (1));
       else
-         return 10;
+         return Default_Depth;
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count return Positive is
+   function Get_Worker_Count return Positive
+   is
+      Optimal_Worker_Count_For_1_CPU : constant := 1;
+      Optimal_Worker_Count_For_9_Iterations_And_2_CPUs : constant := 3;
+      Optimal_Worker_Count_For_9_Iterations_And_4_CPUs : constant := 5;
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
@@ -77,16 +83,16 @@ procedure Binary_Trees is
          --  optimal for 9 iterations.
          case System.Task_Info.Number_Of_Processors is
             when 1 =>
-               return 1;
+               return Optimal_Worker_Count_For_1_CPU;
 
             when 2 =>
-               return 3;
+               return Optimal_Worker_Count_For_9_Iterations_And_2_CPUs;
 
             when 4 =>
-               return 5;
+               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
 
             when others =>
-               return 5;
+               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
          end case;
       end if;
    end Get_Worker_Count;
@@ -128,6 +134,9 @@ procedure Binary_Trees is
                Short_Lived_Pool : Dynamic_Pool
                  (Default_Block_Size =>
                     2 * (2 ** (Depth + 1)) * Trees.Node_Size);
+               --  Since we know how much storage we need, we might as well
+               --  specify a block size large enough to hold all the objects
+               --  in a single block
 
                type Short_Lived_Tree_Node is access Trees.Tree_Node;
                for Short_Lived_Tree_Node'Storage_Pool use Short_Lived_Pool;
@@ -189,6 +198,9 @@ procedure Binary_Trees is
 
    Long_Lived_Tree_Pool : aliased Dynamic_Pool
      (Default_Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+   --  Since we know how much storage we need, we might as well
+   --  specify a block size large enough to hold all the objects
+   --  in a single block
 
    type Long_Lived_Tree_Node is access Trees.Tree_Node;
    for Long_Lived_Tree_Node'Storage_Pool use Long_Lived_Tree_Pool;
@@ -201,7 +213,9 @@ procedure Binary_Trees is
    Check : Integer;
 
 begin
-   Set_Owner (Long_Lived_Tree_Pool.Default_Subpool_for_Pool, Null_Task_Id);
+   --  The main task relinquishes ownership of the default subpool.
+   Set_Owner (Subpool => Long_Lived_Tree_Pool.Default_Subpool_for_Pool,
+              T => Null_Task_Id);
 
    --  Do the stretch tree processing at the same time that the long lived
    --  tree is being created.
@@ -215,6 +229,9 @@ begin
 
          Stretch_Pool : Dynamic_Pool
            (Default_Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+         --  Since we know how much storage we need, we might as well
+         --  specify a block size large enough to hold all the objects
+         --  in a single block
 
          type Stretch_Node is access Trees.Tree_Node;
          for Stretch_Node'Storage_Pool use Stretch_Pool;
@@ -238,6 +255,8 @@ begin
 
       task body Create_Long_Lived_Tree_Task is
       begin
+         --  Since the main task relinquished ownership, we can take ownership
+         --  here.
          Set_Owner (Long_Lived_Tree_Pool.Default_Subpool_for_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
       end Create_Long_Lived_Tree_Task;
