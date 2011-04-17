@@ -1,5 +1,14 @@
 Deepend Version History.
 
+deepend-2.5
+- Added Basic_Dynamic_Pools package, which is a subset of the functionality
+  of Dynamic_Pools, with a simpler interface. It does not provide subpools,
+  but still can be reclaimed all at once, similar to Dynamic_Pools.
+  The idea is that these pools are declared at nested scopes, and 
+  access types are defined with Storage_Pool attribute set to the pool object.
+  Basic_Dynamic_Pools should be forward compatible to Ada 2012, unlike
+  Dynamic_Pools which will need modifications to the interface.
+  
 deepend-2.4
 - Major update to comments in the code. 
 - Improvement to performance for call Default_Subpool_Of_Pool, avoids 
