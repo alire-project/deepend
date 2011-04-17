@@ -70,30 +70,16 @@ procedure Binary_Trees is
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count return Positive
+   function Get_Worker_Count (Iterations : Natural) return Positive
    is
-      Optimal_Worker_Count_For_1_CPU : constant := 1;
-      Optimal_Worker_Count_For_9_Iterations_And_2_CPUs : constant := 3;
-      Optimal_Worker_Count_For_9_Iterations_And_4_CPUs : constant := 5;
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
       else
-         --  A max depth of 20 involves 9 iterations. These values are
-         --  optimal for 9 iterations.
-         case System.Task_Info.Number_Of_Processors is
-            when 1 =>
-               return Optimal_Worker_Count_For_1_CPU;
-
-            when 2 =>
-               return Optimal_Worker_Count_For_9_Iterations_And_2_CPUs;
-
-            when 4 =>
-               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
-
-            when others =>
-               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
-         end case;
+         return Positive'Min
+           (Iterations,
+            System.Task_Info.Number_Of_Processors +
+              (Iterations mod System.Task_Info.Number_Of_Processors));
       end if;
    end Get_Worker_Count;
 
@@ -102,8 +88,6 @@ procedure Binary_Trees is
    Max_Depth     : constant Positive := Positive'Max (Min_Depth + 2,
                                                       Requested_Depth);
    Depth_Iterations : constant Positive := (Max_Depth - Min_Depth) / 2 + 1;
-
-   Worker_Count     : constant Positive := Get_Worker_Count;
 
    task type Depth_Worker
      (Start, Finish : Positive := Positive'Last) is
@@ -168,10 +152,12 @@ procedure Binary_Trees is
 
    end Depth_Worker;
 
-   subtype Worker_Id is Positive range 1 .. Worker_Count;
+   Start_Index     : Positive := 1;
+   End_Index       : Positive := Depth_Iterations;
 
-   Start_Index         : Positive := 1;
-   End_Index           : Positive := Depth_Iterations;
+   Worker_Count    : constant Positive := Get_Worker_Count (Depth_Iterations);
+
+   subtype Worker_Id is Positive range 1 .. Worker_Count;
 
    Iterations_Per_Task : constant Positive :=
      Depth_Iterations / Worker_Count;

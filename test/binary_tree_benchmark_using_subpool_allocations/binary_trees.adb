@@ -68,30 +68,15 @@ procedure Binary_Trees is
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count return Positive
-   is
-      Optimal_Worker_Count_For_1_CPU : constant := 1;
-      Optimal_Worker_Count_For_9_Iterations_And_2_CPUs : constant := 3;
-      Optimal_Worker_Count_For_9_Iterations_And_4_CPUs : constant := 5;
+   function Get_Worker_Count (Iterations : Positive) return Positive is
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
       else
-         --  A max depth of 20 involves 9 iterations. These values are
-         --  optimal for 9 iterations.
-         case System.Task_Info.Number_Of_Processors is
-            when 1 =>
-               return Optimal_Worker_Count_For_1_CPU;
-
-            when 2 =>
-               return Optimal_Worker_Count_For_9_Iterations_And_2_CPUs;
-
-            when 4 =>
-               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
-
-            when others =>
-               return Optimal_Worker_Count_For_9_Iterations_And_4_CPUs;
-         end case;
+         return Positive'Min
+           (Iterations,
+            System.Task_Info.Number_Of_Processors +
+              (Iterations mod System.Task_Info.Number_Of_Processors));
       end if;
    end Get_Worker_Count;
 
@@ -103,7 +88,7 @@ procedure Binary_Trees is
                                                       Requested_Depth);
    Depth_Iterations : constant Positive := (Max_Depth - Min_Depth) / 2 + 1;
 
-   Worker_Count     : constant Positive := Get_Worker_Count;
+   Worker_Count     : constant Positive := Get_Worker_Count (Depth_Iterations);
 
    task type Depth_Worker
      (Start, Finish : Positive := Positive'Last) is
