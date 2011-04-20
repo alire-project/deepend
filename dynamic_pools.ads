@@ -27,7 +27,7 @@
 --  executable file might be covered by the GNU Public License.             --
 ------------------------------------------------------------------------------
 
---  Deepend is a storage pools written in Ada 2005 that is intended to be
+--  Deepend provides storage pools written in Ada 2005 that are intended to be
 --  compatible as much as possible with the Ada 2012 proposal for creating
 --  storage subpools. Once Ada 2012 becomes available, Deepend will be
 --  updated to be fully compliant with Ada 2012 Subpools. The only
@@ -36,11 +36,11 @@
 --  and likely the elimination of the Allocation and Initialized_Allocation
 --  generics, since they will no longer be needed.
 --
---  A Deepend subpool allows objects allocated from the pool to be reclaimed
+--  A Dynamic_Pool allows objects allocated from the pool to be reclaimed
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
---  with this storage pool. The allocations from a Deepend subpool may be
+--  with this storage pool. The allocations from a Dynamic_Pool subpool may be
 --  reclaimed multiple times before the end of the subpool's lifetime
 --  through the explicit call, Unchecked_Deallocate_Objects.
 --
