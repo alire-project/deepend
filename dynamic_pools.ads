@@ -279,7 +279,7 @@ private
       Subpool : -- not null
       Subpool_Handle);
    pragma Compile_Time_Warning
-     (Ada2012_Warnings, "Ada 2005 compiler bug, can't use not null here");
+     (Ada2012_Warnings, "GNAT Ada 2005 compiler bug, can't use not null here");
 --   pragma Precondition
 --     (Is_Owner (Subpool, Current_Task));
 --   We want Allocate_From_Subpool to be fast. The commented out precondition
