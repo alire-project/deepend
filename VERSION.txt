@@ -1,5 +1,16 @@
 Deepend Version History.
 
+deepend-2.6 (Current Version) (Mostly a minor release with documentation
+                               updates)
+- Runs on Android OS. Dual core Samsung Galaxy S II
+- Compiles under the Irvine Ada 2005 Compiler, Windows Linux
+- Compiles under GNAT AUX FSF 4.6.1, Android
+- Compiles under GNAT GPL 2010-2011
+- Warning flagged as Ada 2005 bug, renamed to GNAT bug, since Irvine
+  compile does not exhibit that bug.
+- Added build instructions for Irvine compiler, and added more notes to
+  README
+
 deepend-2.5
 - Added Basic_Dynamic_Pools package, which is a subset of the functionality
   of Dynamic_Pools, with a simpler interface. It does not provide subpools,
