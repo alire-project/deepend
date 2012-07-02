@@ -9,10 +9,6 @@
 
 package body Trees is
 
---     function New_Node is new
---       Allocation
---         (Allocation_Type => Node,
---          Allocation_Type_Access => Tree_Node);
    function New_Node is new
      Allocation
        (Allocation_Type => Node,
