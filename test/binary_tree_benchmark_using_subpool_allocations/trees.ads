@@ -9,9 +9,12 @@
 with Dynamic_Pools; use Dynamic_Pools;
 with System.Storage_Elements; use System;
 
+pragma Elaborate_All (Dynamic_Pools);
+
 package Trees is
 
    type Tree_Node is private;
+
    function Item_Check (Item : Tree_Node) return Integer;
 
    function Create
@@ -25,6 +28,7 @@ private
 
    type Node;
    type Tree_Node is access all Node;
+   pragma No_Strict_Aliasing (Tree_Node);
 
    type Node is record
       Left  : Tree_Node;
