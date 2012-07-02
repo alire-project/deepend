@@ -80,7 +80,7 @@ procedure Binary_Trees is
       end if;
    end Get_Worker_Count;
 
-   Pool : aliased Dynamic_Pools.Dynamic_Pool (Default_Block_Size => 0);
+   Pool : Dynamic_Pools.Dynamic_Pool (Default_Block_Size => 0);
 
    Min_Depth     : constant := 4;
    Requested_Depth : constant Positive := Get_Depth;
@@ -117,7 +117,7 @@ procedure Binary_Trees is
             declare
                Short_Lived_Subpool : constant Scoped_Subpool_Handle
                  := Create_Subpool
-                   (Pool => Pool'Access,
+                   (Pool => Pool,
                     Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
@@ -195,7 +195,7 @@ begin
 
          Subpool : constant Scoped_Subpool_Handle :=
            Create_Subpool
-             (Pool => Pool'Access,
+             (Pool => Pool,
               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
@@ -220,7 +220,7 @@ begin
       task body Create_Long_Lived_Tree_Task is
          Subpool : constant Subpool_Handle
            := Create_Subpool
-             (Pool => Pool'Access,
+             (Pool => Pool,
               Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
