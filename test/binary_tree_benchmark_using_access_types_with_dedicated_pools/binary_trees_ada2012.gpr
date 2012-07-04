@@ -7,10 +7,11 @@ project Binary_Trees_Ada2012 is
 
    package Builder is
       for Default_Switches ("ada") use ("-j4", "-g", "-o", "binary_trees_ada2012");
+      for Global_Configuration_Pragmas use "../../global_pragmas";
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x", "-gnatyaAbcefhikIlnmprStux", "-gnatVn", "-gnatp", "-O3", "-gnatn", "-funroll-loops", "-gnat12", "-g");
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.h.i.l.n.o.s.t.u", "-gnatyaAbcefhikIlnmprStuxBO", "-gnatVn", "-gnatp", "-O3", "-gnatn", "-funroll-loops", "-g", "-gnat12");
    end Compiler;
 
    package Linker is
