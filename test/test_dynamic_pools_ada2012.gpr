@@ -10,7 +10,7 @@ project Test_Dynamic_Pools_Ada2012 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat12", "-gnatwc.cfjklm.op.pr.rtu.wx.x.l.n.s.t.u.h.i", "-gnatyaAbcdefhiIklmprStuxOBn", "-fstack-check", "-gnato");
+      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat12", "-gnatwc.cfjklm.op.pr.rtu.wx.x.l.n.s.t.u.h.i", "-gnatyaAbcefhiIklmprStuxOBn", "-fstack-check", "-gnato");
    end Compiler;
 
    package Linker is
