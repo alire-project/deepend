@@ -1,5 +1,9 @@
 Deepend Version History.
 
+deepend-3.0 (Current Version) 
+- Major revision now supports both Ada 2012 and Ada 2005
+- Storage_Size is now implemented.
+
 deepend-2.6 (Current Version) (Mostly a minor release with documentation
                                updates)
 - Runs on Android OS. Dual core Samsung Galaxy S II
