@@ -2,11 +2,32 @@ with Dynamic_Pools; use Dynamic_Pools;
 with Ada.Text_IO; use Ada.Text_IO;
 with System.Storage_Elements; use System;
 with Ada.Finalization;
+
 procedure Test_Dynamic_Pools_Ada2012
 is
    Pool : Dynamic_Pools.Dynamic_Pool
-     (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size
-     );
+     (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
+
+   subtype Id_String is String (1 .. 10);
+   type Id_String_Access is access Id_String;
+   for Id_String_Access'Storage_Pool use Pool;
+
+   type String_Access is access String;
+   for String_Access'Storage_Pool use Pool;
+
+   type Node_Type is record
+      Value : Integer;
+      Name : access String;
+      Description : Id_String_Access;
+      Next : access Node_Type;
+   end record;
+
+   type Node_Access is access Node_Type;
+   for Node_Access'Storage_Pool use Pool;
+
+   pragma Compile_Time_Warning
+      (True, "Shouldn't have to specify Storage_Pool attribute to use" &
+       " subpools but GNAT currently requires this");
 
    type Ordinary_Type is
       record
@@ -18,14 +39,14 @@ is
          Value : Integer;
       end record;
 
- Object_Count : Natural := 0;
+   Object_Count : Natural := 0;
 
-      overriding procedure Initialize
-        (Object : in out Reference_Counted_Type);
-      overriding procedure Finalize
-        (Object : in out Reference_Counted_Type);
-      overriding procedure Adjust
-        (Object : in out Reference_Counted_Type);
+   overriding procedure Initialize
+     (Object : in out Reference_Counted_Type);
+   overriding procedure Finalize
+     (Object : in out Reference_Counted_Type);
+   overriding procedure Adjust
+     (Object : in out Reference_Counted_Type);
 
    overriding procedure Initialize (Object : in out Reference_Counted_Type)
    is
@@ -51,6 +72,55 @@ is
       Put_Line ("Called Final");
    end Finalize;
 
+   function Recurse (Depth : Natural) return Node_Access
+   is
+      Sub_Pool : constant Dynamic_Pools.Subpool_Handle
+        := Dynamic_Pools.Create_Subpool (Pool);
+
+      Node : constant Node_Access := new (Sub_Pool) Node_Type;
+
+      Name : constant String_Access :=
+        new String'("Depth=" & Natural'Image (Depth));
+
+      Description : constant Id_String_Access
+      := new (Sub_Pool) String'("ABCDEFGHIJ");
+
+      pragma Compile_Time_Warning
+        (True,
+        "Note: The current GNAT implementation maps all allocations to the " &
+           "pool. This means that when we deallocate the subpool, nothing is" &
+           " freed since the objects were allocated to a different subpool");
+
+   begin
+      if Depth = 0 then
+         Node.all := (Value => 0,
+                      Name => Name.all'Unchecked_Access,
+                      Description => Description,
+                      Next => null);
+         return  Node;
+      else
+         Node.all := (Value => Depth,
+                      Name => Name.all'Unchecked_Access,
+                      Description => Description,
+                      Next => Recurse (Depth - 1));
+         return Node;
+      end if;
+   end Recurse;
+
+   procedure Print (List : Node_Type)
+   is
+   begin
+      if List.Next /= null then
+         Print (List.Next.all);
+      end if;
+
+      Put_Line (Integer'Image (List.Value) &
+                ", Name=<" & List.Name.all &
+                ">, Desc=<" & List.Description.all & '>');
+   end Print;
+
+   List : constant Node_Access := Recurse (10);
+
    type RC_Access is access Reference_Counted_Type;
    for RC_Access'Storage_Pool use Pool;
 
@@ -60,23 +130,31 @@ is
 begin
    begin
 
+      pragma Warnings (Off, "*Object*is assigned but never read*");
+
       declare
          Sub_Pool : Dynamic_Pools.Subpool_Handle
            := Dynamic_Pools.Create_Subpool (Pool);
-         Object1 : constant RC_Access
-           := new (Sub_Pool) Reference_Counted_Type;
 
-        --  '(Ada.Finalization.Controlled with Value => 1);
+         Object : RC_Access;
       begin
-         Put_Line ("Object Value=" & Natural'Image (Object1.Value));
+         for I in 1 .. 10 loop
+            Object := new (Sub_Pool)
+              Reference_Counted_Type;
+         end loop;
+
          Put_Line ("Object Count=" & Natural'Image (Object_Count));
          Put_Line ("Bytes Stored=" &
                      Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+         Put_Line ("Deallocating Subpool...");
 
          pragma Warnings (Off, "*Sub_Pool* modified*but*never referenced*");
          Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
          pragma Warnings (On, "*Sub_Pool* modified*but*never referenced*");
       end;
+
+      pragma Warnings (On, "*Object*is assigned but never read*");
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
@@ -88,14 +166,21 @@ begin
       declare
          Sub_Pool : Dynamic_Pools.Subpool_Handle
            := Dynamic_Pools.Create_Subpool (Pool);
-         Object1 : constant O_Access
-           := new (Sub_Pool) Ordinary_Type;
-
-        --  '(Ada.Finalization.Controlled with Value => 1);
       begin
-         Put_Line ("Object Value=" & Natural'Image (Object1.Value));
+
+         for I in 1 .. 10 loop
+            declare
+               Object : constant O_Access
+                 := new (Sub_Pool) Ordinary_Type'(Value => I);
+            begin
+               Put_Line ("Object Value=" & Natural'Image (Object.Value));
+            end;
+         end loop;
+
          Put_Line ("Bytes Stored=" &
                      Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+         Put_Line ("Deallocating Subpool...");
 
          pragma Warnings (Off, "*Sub_Pool* modified*but*never referenced*");
          Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
@@ -105,5 +190,7 @@ begin
       Put_Line ("Bytes Stored=" &
                   Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end;
+
+   Print (List.all);
 
 end Test_Dynamic_Pools_Ada2012;
