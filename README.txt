@@ -2,18 +2,15 @@
 ================
 
 Deepend is a dynamic storage pool with Subpool capabilities for Ada 2005
-and soon to be supported in Ada 2012 where all the objects in a subpool
-can be reclaimed all at once, instead of requiring each object to be
-individually reclaimed one at a time. A Dynamic Pool may have any number
-of subpools. If subpools are not reclaimed prior to finalization of the
-pool, then they are finalized when the pool is finalized.
+and Ada 2012 where all the objects in a subpool can be reclaimed all at
+once, instead of requiring each object to be individually reclaimed one 
+at a time. A Dynamic Pool may have any number of subpools. If subpools 
+are not reclaimed prior to finalization of the pool, then they are 
+finalized when the pool is finalized.
 
 Rather than deallocate items individually which is error prone and
 subceptable to memory leaks and other memory issues, a subpool can be 
 freed all at once automatically when the pool object goes out of scope. 
-
-In addition, a subpool may be reclaimed multiple times before the end of
-its lifetime through an explicit call to Unchecked_Deallocate_Subpool.
 
 Have you ever wondered why Deallocating in Ada is called 
 Unchecked_Deallocation, or why Ada has a new operator, but not a delete
@@ -74,57 +71,39 @@ Please send comments to brad.moore@shaw.ca
 
 Deepend has been ported to the following compilers and platforms.
 
-   GNAT GPL 2010-2011  (Windows, Linux)
+   GNAT GPL 2010-2012  (Windows, Linux)
    Irvine Ada 2005     (Windows, Linux)
    GNAT AUX FSF 4.6.1  (Android)
 
 Deepend is intended to be portable to any platform that supports 
-Ada 2005 compilation, and in theory, any Ada 2005 compiler should be
-able to compile the code since there are no dependencies on vendor 
-specific run-time libraries.
+Ada 2005 or Ada 2012 compilation, and in theory, any Ada 2005 or Ada
+2012 compiler should be able to compile the code since there are no 
+dependencies on vendor specific run-time libraries.
 
 It should also be possible to compile Deepend for any target
 system, since Deepend does not rely on any OS-specific support.
 
 4.0 LIMITATIONS
 ==============
-It is erroneous to allocate objects that need finalization
-  eg. (Tasks, or objects of types inherited from types defined in
-       Ada.Finalization) from this storage pool
-and then Release the storage associated with those objects before they
-would have otherwise been finalized. (Either through a call to 
-Unchecked_Deallocate_Storage, or through a call to 
-Unchecked_Deallocate_Objecs for a parent pool that has a subpool 
-containing such objects. Once Ada 2012 becomes available, this pool 
-should allow allocation of controlled types, although tasks allocations 
-will not be allowed for the foreseeable future.
+For the Ada 2005 version of the packages, it is erroneous to allocate
+objects of unconstrained types and objects that need finalization
+  eg. (Tasks, protected objects, or objects of types inherited from 
+       types defined in Ada.Finalization) from this storage pool
+and then Deallocate the subpool associated with those objects before 
+the objects would have otherwise been finalized. 
 
-Access types for indefinite objects, such as variable length arrays and 
-variable sized record types with discriminants, i,e, fat pointers, 
-cannot be allocated using the generic Allocate or Initialized_Allocate 
-procedures. They may be allocated however using Ada's new operator, 
-except this precludes the ability to dynamically specify the subpool
-object. It uses the default subpool object that is associated with the 
-pool. In Ada 2012, indefinite objects can be allocated from subpools as
-well.
+For the Ada 2012 version of the packages, it is only erroneous to
+allocate task objects, or objects that contain tasks to a subpool.
+Objects of unconstrained types, protected types, and controlled types
+may be allocated to a subpool, and will be properly deallocated if
+the containing subpool is deallocated.
 
-It is currently proposed that Ada 2012 will contain mechanisms to free 
-such objects needing finalization from a storage pool prior to the 
-finalization of the pool, as well as provide syntax to allow fat 
-pointers to be allocated to a subpool.
-
-Upgrading this package to Ada 2012 may (and likely will) involve making 
-changes to the visible specifications of this package. Most of the
-changes are already in place however, as this subpool was designed to 
-work with the proposal in AI05-0111-3. Certain language features such as
-pre and post aspects, and functions with in out parameters, and default
-discriminants for tagged types are not available until Ada 2012 becomes
-available. 
-
-Where possible, pre aspects are specified with GNAT precondition pragmas,
-and post aspcates are specified with GNAT postcondition pragmas. In out
-parameters for functions are passed as anonymous access parameters.
-Ada 2012 will allow functions to have in out parameters.
+The main differences between the Ada 2005 version and the Ada 2012
+version of the Dynamic_Pools package is that the Ada 2012 version
+takes advantages of the new features of the language, including
+defaults for discriminated types, functions with in out parameters 
+instead of access parameters, pre/post conditions, and utilization of
+the new standard subpools storage package, Ada.Storage_Pools.Subpools.
 
 5.0 DOWNLOADING
 ==============
@@ -152,23 +131,16 @@ Deepend currently provides two options for storage management
   1) Basic_Dynamic_Pools
   2) Dynamic_Pools
 
-Basic_Dynamic_Pools is forward compatible with the Ada 2012 proposal
-for Storage_Pools, since it only allows allocations via the existing "new"
-operator. This facility relies on access type finalization to free
-all the objects from a pool.
+Basic_Dynamic_Pools is forward compatible with the Ada 2012 standard
+for Storage_Pools, since it only allows allocations via the existing 
+"new" operator (without subpool specifications). This facility relies 
+on access type finalization to free all the objects from a pool, and
+does not otherwise support subpools.
 
 Dynamic_Pools provides the capabilities of Basic_Dynamic_Pools, but in
 addition allows the creation of subpools, and allocations can be made
 from subpools. Subpools can be deallocated, which deallocates all
-objects allocated from the subpool. The Dynamic_Pools package is 
-designed to closely align with the Ada 2012 proposal, except that it
-works for Ada 2005. When Ada 2012 is available, the interfaces may 
-change to match the proposal, and capabilities offered by Ada 2012.
-
-Likely Dynamic_Pools will remain as currently defined, but provides
-a good transition for those thinking of eventually moving to Ada 2012.
-To accomodate Ada 2012, a new Ada 2012 specific version of Deepend will
-be made available.
+objects allocated from the subpool. 
 
 7.0 TEST EXECUTABLES
 ===================
@@ -189,7 +161,8 @@ implementations of a benchmark test.
 
 8.0 WHY DEEPEND?
 ===============
-  1) A pool has to be pretty deep if it is to have subs floating in it.
+  1) Its the end of the pool you'd expect to go to, if the pool is to 
+     have subs floating in it.
   2) Hopefully it can be used to write deependable software.
   3) Hopefully it doesn't mean this is something the author has gone off of.
 
