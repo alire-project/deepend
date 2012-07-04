@@ -63,8 +63,7 @@ package Sys.Storage_Pools.Subpools is
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count;
-      Subpool : --  not null
-      Subpool_Handle) is abstract;
+      Subpool : not null Subpool_Handle) is abstract;
    --  with Pre'Class => Pool_of_Subpool(Subpool) = Pool'Access;
    pragma Compile_Time_Warning
      (Ada_2012_Warnings, "Use Pre'Class, and uncomment");
