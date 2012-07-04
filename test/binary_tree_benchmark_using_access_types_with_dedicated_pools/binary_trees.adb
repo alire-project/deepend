@@ -47,7 +47,7 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
-with Dynamic_Pools;          use Dynamic_Pools;
+with Basic_Dynamic_Pools;    use Basic_Dynamic_Pools;
 with Trees.Creation;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
@@ -58,6 +58,8 @@ with System.Task_Info;
 with Ada.Task_Identification; use Ada.Task_Identification;
 
 procedure Binary_Trees is
+
+   subtype Dynamic_Pool is Basic_Dynamic_Pool;
 
    Default_Depth : constant := 20;
 
@@ -200,7 +202,7 @@ procedure Binary_Trees is
 
 begin
    --  The main task relinquishes ownership of the default subpool.
-   Set_Owner (Subpool => Long_Lived_Tree_Pool.Default_Subpool_for_Pool,
+   Set_Owner (Pool => Long_Lived_Tree_Pool,
               T => Null_Task_Id);
 
    --  Do the stretch tree processing at the same time that the long lived
@@ -243,7 +245,7 @@ begin
       begin
          --  Since the main task relinquished ownership, we can take ownership
          --  here.
-         Set_Owner (Long_Lived_Tree_Pool.Default_Subpool_for_Pool);
+         Set_Owner (Long_Lived_Tree_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
       end Create_Long_Lived_Tree_Task;
    begin
