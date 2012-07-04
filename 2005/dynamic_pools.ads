@@ -49,9 +49,7 @@
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
---  with this storage pool. The allocations from a Dynamic_Pool subpool may be
---  reclaimed multiple times before the end of the subpool's lifetime
---  through the explicit call, Unchecked_Deallocate_Objects.
+--  with this storage pool.
 --
 --  Tasks can create subpools from the same Dynamic Pool object at the
 --  same time, but only one task may allocate from a specific subpool
