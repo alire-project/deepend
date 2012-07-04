@@ -10,7 +10,7 @@ project Binary_Trees_Ada2005 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x", "-gnatyaAbcefhikIlnmprStux", "-gnat05", "-gnatVn", "-gnatp", "-O3", "-gnatn", "-funroll-loops", "-g");
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.h.i.o.n.l.s.t.u", "-gnatyaAbcefhikIlnmprStuxBO", "-gnatVn", "-gnatp", "-O3", "-gnatn", "-funroll-loops", "-g", "-gnat05");
    end Compiler;
 
    package Linker is
