@@ -36,9 +36,7 @@
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
---  with this storage pool. The allocations from a Basic_Dynamic Pool may be
---  reclaimed multiple times before the end of the pool's lifetime
---  through the explicit call, Unchecked_Deallocate_Objects.
+--  with this storage pool.
 --
 --  Only one task may allocate from a specific Basic_Dynamic_Pool instance at
 --  a time. Attempts by other tasks to allocate from a pool owned by another
