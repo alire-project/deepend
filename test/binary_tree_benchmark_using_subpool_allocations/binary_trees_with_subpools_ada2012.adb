@@ -55,7 +55,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with System.Storage_Elements; use System.Storage_Elements;
 with System.Task_Info;
 
-procedure Binary_Trees_Ada2012 is
+procedure Binary_Trees_With_Subpools_Ada2012 is
 
    Default_Depth : constant := 20;
 
@@ -259,4 +259,4 @@ begin
    Put (Item => Check, Width => 0);
    New_Line;
 
-end Binary_Trees_Ada2012;
+end Binary_Trees_With_Subpools_Ada2012;

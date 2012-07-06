@@ -42,9 +42,12 @@ Please send comments to brad.moore@shaw.ca
    icm scan -subdir "*.ad?"
    icm scan 2005/*.ad{s,b}
    icm scan test/binary_tree_benchmark_using_access_types_with_dedicated_pools/*.ad{s,b}
-   REM icm scan test/binary_tree_benchmark_using_subpool_deallocations/*.ad{s,b}
+   REM icm scan test/binary_tree_benchmark_using_subpool_allocations/*.ad{s,b}
    icm make test_dynamic_pools_ada2005
-   icm make binary_trees_ada2005
+   icm make binary_trees_without_subpools
+   REM icm make binary_trees_with_subpools_ada2005
+
+
 
   You can add other compile flags as well, such as
       -compile_flags=\"-predef=(f32,lf64) -opt -debug -nochecks\"    
