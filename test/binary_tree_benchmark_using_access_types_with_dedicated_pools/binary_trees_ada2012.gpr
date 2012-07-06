@@ -2,11 +2,11 @@ project Binary_Trees_Ada2012 is
 
    for Object_Dir use "../obj";
    for Exec_Dir use ".";
-   for Main use ("binary_trees.adb");
+   for Main use ("binary_trees_without_subpools.adb");
    for Source_Dirs use (".", "../../2012");
 
    package Builder is
-      for Default_Switches ("ada") use ("-j4", "-g", "-o", "binary_trees_ada2012");
+      for Default_Switches ("ada") use ("-j4", "-g", "-o", "binary_trees_without_subpools_ada2012");
       for Global_Configuration_Pragmas use "../../global_pragmas";
    end Builder;
 
