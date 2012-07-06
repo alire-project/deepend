@@ -57,7 +57,7 @@ with System.Storage_Elements; use System.Storage_Elements;
 with System.Task_Info;
 with Ada.Task_Identification; use Ada.Task_Identification;
 
-procedure Binary_Trees is
+procedure Binary_Trees_Without_Subpools is
 
    subtype Dynamic_Pool is Basic_Dynamic_Pool;
 
@@ -279,4 +279,4 @@ begin
    Put (Item => Check, Width => 0);
    New_Line;
 
-end Binary_Trees;
+end Binary_Trees_Without_Subpools;

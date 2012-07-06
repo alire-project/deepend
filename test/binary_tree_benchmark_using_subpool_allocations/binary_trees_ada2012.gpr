@@ -1,9 +1,9 @@
 project Binary_Trees_Ada2012 is
 
-   for Object_Dir use "../obj";
-   for Exec_Dir use ".";
+   for Object_Dir use "..\obj";
+   for Exec_Dir use "..\bin";
    for Main use ("binary_trees_with_subpools_ada2012.adb");
-   for Source_Dirs use (".", "../../2012");
+   for Source_Dirs use (".", "..\..\2012");
 
    package Builder is
       for Default_Switches ("ada") use ("-j4", "-g");
