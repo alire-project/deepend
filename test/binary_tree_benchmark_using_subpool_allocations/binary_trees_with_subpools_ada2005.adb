@@ -46,7 +46,7 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
-with Trees;                  use Trees;
+with Trees_Ada2005;
 with Dynamic_Pools;          use Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
@@ -56,6 +56,8 @@ with System.Storage_Elements; use System.Storage_Elements;
 with System.Task_Info;
 
 procedure Binary_Trees_With_Subpools_Ada2005 is
+
+   package Trees renames Trees_Ada2005;
 
    Default_Depth : constant := 20;
 
@@ -79,8 +81,6 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
               (Iterations mod System.Task_Info.Number_Of_Processors));
       end if;
    end Get_Worker_Count;
-
-   Pool : aliased Dynamic_Pools.Dynamic_Pool (Default_Block_Size => 0);
 
    Min_Depth     : constant := 4;
    Requested_Depth : constant Positive := Get_Depth;
@@ -117,30 +117,30 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
             declare
                Short_Lived_Subpool : constant Scoped_Subpool_Handle
                  := Create_Subpool
-                   (Pool => Pool'Access,
+                   (Pool => Trees.Pool'Access,
                     Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
 
-               Short_Lived_Tree_1, Short_Lived_Tree_2 : Tree_Node;
+               Short_Lived_Tree_1, Short_Lived_Tree_2 : Trees.Tree_Node;
             begin
 
                Short_Lived_Tree_1 :=
-                 Create
+                 Trees.Create
                    (Short_Lived_Subpool.Handle,
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
-                  Create
+                  Trees.Create
                     (Short_Lived_Subpool.Handle,
                      Item  => -I,
                      Depth => Depth);
 
                Check := Check +
-                 Item_Check (Short_Lived_Tree_1) +
-                 Item_Check (Short_Lived_Tree_2);
+                 Trees.Item_Check (Short_Lived_Tree_1) +
+                 Trees.Item_Check (Short_Lived_Tree_2);
 
             end;
          end loop;
@@ -178,7 +178,7 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree      : Tree_Node;
+   Long_Lived_Tree      : Trees.Tree_Node;
 
    Check : Integer;
 
@@ -195,18 +195,18 @@ begin
 
          Subpool : constant Scoped_Subpool_Handle :=
            Create_Subpool
-             (Pool => Pool'Access,
+             (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
 
-         Stretch_Tree : constant Tree_Node :=
+         Stretch_Tree : constant Trees.Tree_Node :=
            Trees.Create (Subpool  => Subpool.Handle,
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
-         Check        := Item_Check (Stretch_Tree);
+         Check        := Trees.Item_Check (Stretch_Tree);
          Put ("stretch tree of depth ");
          Put (Item => Stretch_Depth, Width => 1);
          Put (HT & " check: ");
@@ -220,13 +220,13 @@ begin
       task body Create_Long_Lived_Tree_Task is
          Subpool : constant Subpool_Handle
            := Create_Subpool
-             (Pool => Pool'Access,
+             (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
       begin
-         Long_Lived_Tree := Create (Subpool, 0, Max_Depth);
+         Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
       end Create_Long_Lived_Tree_Task;
    begin
       null;
@@ -255,7 +255,7 @@ begin
    Put ("long lived tree of depth ");
    Put (Item => Max_Depth, Width => 0);
    Put (HT & " check: ");
-   Check := Item_Check (Long_Lived_Tree);
+   Check := Trees.Item_Check (Long_Lived_Tree);
    Put (Item => Check, Width => 0);
    New_Line;
 
