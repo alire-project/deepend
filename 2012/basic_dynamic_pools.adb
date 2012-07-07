@@ -47,13 +47,8 @@ package body Basic_Dynamic_Pools is
       Alignment : Storage_Elements.Storage_Count)
    is
       pragma Unreferenced (Alignment);
-      use type Storage_Elements.Storage_Count;
       use type Ada.Containers.Count_Type;
    begin
-
-      if Pool.Default_Block_Size = 0 then
-         raise Program_Error;
-      end if;
 
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
@@ -68,7 +63,7 @@ package body Basic_Dynamic_Pools is
          else
             Pool.Active := new System.Storage_Elements.Storage_Array
               (1 .. Storage_Elements.Storage_Count'Max
-                 (Size_In_Storage_Elements, Pool.Default_Block_Size));
+                 (Size_In_Storage_Elements, Pool.Block_Size));
          end if;
 
          Pool.Next_Allocation := Pool.Active'First;
@@ -99,12 +94,10 @@ package body Basic_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool)
-   is
-      use type System.Storage_Elements.Storage_Count;
+   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
    begin
       Pool.Active := new System.Storage_Elements.Storage_Array
-        (1 .. Pool.Default_Block_Size);
+        (1 .. Pool.Block_Size);
       Pool.Next_Allocation := 1;
       Pool.Owner := Ada.Task_Identification.Current_Task;
    end Initialize;
@@ -135,18 +128,11 @@ package body Basic_Dynamic_Pools is
       return Storage_Elements.Storage_Count
    is
       Result : Storage_Elements.Storage_Count := 0;
-
-      procedure Add_Storage_Count (Position : Storage_Vector.Cursor)
-      is
-         use type Storage_Elements.Storage_Offset;
-      begin
-         Result := Result + Storage_Vector.Element (Position)'Length;
-      end Add_Storage_Count;
-
-      use type Storage_Elements.Storage_Count;
    begin
-      Pool.Used_List.Iterate
-        (Process => Add_Storage_Count'Access);
+
+      for E in Pool.Used_List.Iterate loop
+         Result := Result + Pool.Used_List (E).all'Length;
+      end loop;
 
       return Result + Pool.Next_Allocation - 1;
    end Storage_Size;
