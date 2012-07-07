@@ -26,10 +26,6 @@ is
    type Node_Access is access Node_Type;
    for Node_Access'Storage_Pool use Pool;
 
-   pragma Compile_Time_Warning
-      (True, "Shouldn't have to specify Storage_Pool attribute to use" &
-       " subpools but GNAT currently requires this");
-
    type Ordinary_Type is
       record
          Value : Integer;
