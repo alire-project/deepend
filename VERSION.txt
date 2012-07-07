@@ -1,11 +1,25 @@
 Deepend Version History.
 
-deepend-3.0 (Current Version) 
+deepend-3.1 (Current Version) 
+- Can now deallocate the default subpool, then continue to allocate
+  from the default subpool.
+- Took advantage of new Ada 2012 features including;
+   o New Iterator syntax for containers
+   o Expression Functions
+   o Conditional expressions
+   o Invariants
+   o Pre and Post conditions
+   o static subtype predicates
+- Corrected build documentation for ICC Ada 2005 compiler
+- Test drivers improved with more comprehensive tests
+- Tree benchmark tests more specialized between Ada 2012 vs Ada 2005
+- Restructured compiler output folders
+
+deepend-3.0 
 - Major revision now supports both Ada 2012 and Ada 2005
 - Storage_Size is now implemented.
 
-deepend-2.6 (Current Version) (Mostly a minor release with documentation
-                               updates)
+deepend-2.6 (Mostly a minor release with documentation updates)
 - Runs on Android OS. Dual core Samsung Galaxy S II
 - Compiles under the Irvine Ada 2005 Compiler, Windows Linux
 - Compiles under GNAT AUX FSF 4.6.1, Android
