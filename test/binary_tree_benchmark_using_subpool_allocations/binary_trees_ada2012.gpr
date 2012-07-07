@@ -1,16 +1,17 @@
 project Binary_Trees_Ada2012 is
 
-   for Object_Dir use "..\obj";
-   for Exec_Dir use "..\bin";
+   for Object_Dir use "../obj";
+   for Exec_Dir use "../bin";
    for Main use ("binary_trees_with_subpools_ada2012.adb");
-   for Source_Dirs use (".", "..\..\2012");
+   for Source_Dirs use (".", "../../2012");
 
    package Builder is
       for Default_Switches ("ada") use ("-j4", "-g");
+      for Global_Configuration_Pragmas use "../../global_pragmas_ada_2012";
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.i.h.l.o.s.t.u.n", "-gnatyaAbcefhikIlnmprStuxBO", "-O3", "-gnatn", "-funroll-loops", "-gnatp", "-gnat12", "-gnatVn", "-g");
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.i.h.l.o.s.t.u.n", "-gnatyaAbcefhikIlnmprStuxBO", "-gnat12", "-gnatVn", "-g", "-gnatp", "-O3", "-gnatn", "-funroll-loops");
    end Compiler;
 
    package Linker is
