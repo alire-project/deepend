@@ -59,8 +59,6 @@ with Ada.Task_Identification; use Ada.Task_Identification;
 
 procedure Binary_Trees_Without_Subpools is
 
-   subtype Dynamic_Pool is Basic_Dynamic_Pool;
-
    Default_Depth : constant := 20;
 
    function Get_Depth return Positive is
@@ -117,8 +115,8 @@ procedure Binary_Trees_Without_Subpools is
          for I in 1 .. Iterations loop
             declare
 
-               Short_Lived_Pool : Dynamic_Pool
-                 (Default_Block_Size =>
+               Short_Lived_Pool : Basic_Dynamic_Pool
+                 (Block_Size =>
                     2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
@@ -184,8 +182,8 @@ procedure Binary_Trees_Without_Subpools is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree_Pool : aliased Dynamic_Pool
-     (Default_Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+   Long_Lived_Tree_Pool : aliased Basic_Dynamic_Pool
+     (Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
    --  Since we know how much storage we need, we might as well
    --  specify a block size large enough to hold all the objects
    --  in a single block
@@ -215,8 +213,8 @@ begin
 
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Stretch_Pool : Dynamic_Pool
-           (Default_Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+         Stretch_Pool : Basic_Dynamic_Pool
+           (Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
