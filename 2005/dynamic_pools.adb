@@ -63,7 +63,6 @@ package body Dynamic_Pools is
          is
             Subpool : constant Dynamic_Subpool_Access :=
               Subpool_Vector.Element (Position);
-            use type Storage_Elements.Storage_Offset;
          begin
             Result := Result + Storage_Size (Subpool);
          end Subpool_Storage_Usage;
@@ -118,17 +117,23 @@ package body Dynamic_Pools is
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count)
    is
-      use type System.Storage_Elements.Storage_Count;
+      use type Sys.Storage_Pools.Subpools.Subpool_Handle;
    begin
-      if Pool.Default_Block_Size = 0 then
-         raise Storage_Error;
+      pragma Assert (Pool.Default_Block_Size >= Size_In_Storage_Elements);
+
+      --  In case the default subpool had been deallocated
+      if Pool.Default_Subpool_For_Pool = null then
+
+         Pool.Default_Subpool :=
+           Create_Subpool (Pool'Access,
+                           Pool.Default_Block_Size);
       end if;
 
       Pool.Allocate_From_Subpool
         (Storage_Address,
          Size_In_Storage_Elements,
          Alignment,
-         Pool.Default_Subpool_for_Pool);
+         Pool.Default_Subpool_For_Pool);
    end Allocate;
 
    overriding
@@ -140,10 +145,14 @@ package body Dynamic_Pools is
       Subpool : not null Subpool_Handle)
    is
       pragma Unreferenced (Alignment, Pool);
-      use type System.Storage_Elements.Storage_Offset;
       use type Ada.Containers.Count_Type;
       Sub : Dynamic_Subpool renames Dynamic_Subpool (Subpool.all);
    begin
+
+      pragma Assert
+        (Is_Owner (Subpool, Current_Task) and then
+           Dynamic_Subpool (Subpool.all).Block_Size >=
+           Size_In_Storage_Elements);
 
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
@@ -179,10 +188,9 @@ package body Dynamic_Pools is
       function Convert is new Ada.Unchecked_Conversion
         (Source => System.Address,
          Target => Allocation_Type_Access);
-      use type System.Storage_Elements.Storage_Offset;
    begin
 
-      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
         (Storage_Address => Location,
@@ -198,15 +206,15 @@ package body Dynamic_Pools is
 
    overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return not null Subpool_Handle
-   is
-      use type System.Storage_Elements.Storage_Count;
+     (Pool : access Dynamic_Pool) return not null Subpool_Handle is
    begin
+
       if Pool.Default_Block_Size = 0 then
          return Create_Subpool (Pool, Default_Allocation_Block_Size);
       else
          return Create_Subpool (Pool, Pool.Default_Block_Size);
       end if;
+
    end Create_Subpool;
 
    --------------------------------------------------------------
@@ -290,7 +298,9 @@ package body Dynamic_Pools is
         The_Subpool = Dynamic_Subpool
           (Pool.Default_Subpool.all)'Access
       then
-         Pool.Default_Subpool := null;
+         Pool.Default_Subpool :=
+           Create_Subpool (Pool'Access,
+                           Block_Size => Pool.Default_Block_Size);
       end if;
 
       Free_Subpool (The_Subpool);
@@ -300,12 +310,12 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    overriding
-   function Default_Subpool_for_Pool
+   function Default_Subpool_For_Pool
      (Pool : Dynamic_Pool)
       return not null Subpool_Handle is
    begin
       return Pool.Default_Subpool;
-   end Default_Subpool_for_Pool;
+   end Default_Subpool_For_Pool;
 
    --------------------------------------------------------------
 
@@ -338,9 +348,7 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Dynamic_Pool)
-   is
-      use type System.Storage_Elements.Storage_Count;
+   overriding procedure Initialize (Pool : in out Dynamic_Pool) is
    begin
       if Pool.Default_Block_Size > 0 then
          Pool.Default_Subpool := Pool.Create_Subpool;
@@ -361,12 +369,9 @@ package body Dynamic_Pools is
       function Convert is new Ada.Unchecked_Conversion
         (Source => System.Address,
          Target => Allocation_Type_Access);
-
-      use type System.Storage_Elements.Storage_Offset;
-
    begin
 
-      --  pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
+      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
         (Storage_Address => Location,
@@ -411,14 +416,11 @@ package body Dynamic_Pools is
    is
       Result : Storage_Elements.Storage_Count := 0;
 
-      procedure Add_Storage_Count (Position : Storage_Vector.Cursor)
-      is
-         use type Storage_Elements.Storage_Offset;
+      procedure Add_Storage_Count (Position : Storage_Vector.Cursor) is
       begin
          Result := Result + Storage_Vector.Element (Position)'Length;
       end Add_Storage_Count;
 
-      use type Storage_Elements.Storage_Count;
    begin
       Subpool.Used_List.Iterate
         (Process => Add_Storage_Count'Access);
@@ -456,13 +458,10 @@ package body Dynamic_Pools is
          return;
       end if;
 
-      --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist currently,
-      --  dispatch to Deallocate_Subpool directly for now.
+      --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
+      --  dispatch to Deallocate_Subpool directly.
       Storage_Pools.Subpools.Pool_Of_Subpool
         (Subpool).Deallocate_Subpool (Subpool);
-
-      --  As per AI05-0111-3
-      --  Ada.Unchecked_Deallocate_Subpool (Subpool);
 
    end Unchecked_Deallocate_Subpool;
 
