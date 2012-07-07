@@ -108,6 +108,7 @@ use Sys;
 private with Ada.Containers.Vectors;
 
 package Dynamic_Pools is
+
    pragma Elaborate_Body;
    --  Needed to ensure that library routines can execute allocators
 
@@ -206,7 +207,7 @@ package Dynamic_Pools is
    --  Subpool to null.
 
    overriding
-   function Default_Subpool_for_Pool
+   function Default_Subpool_For_Pool
      (Pool : Dynamic_Pool) return not null Subpool_Handle;
    --  This calls returns the default subpool for the pool. It raises
    --  Storage_Error if Pool.Default_Block_Size is zero. The default
@@ -234,7 +235,7 @@ private
 
    type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
 
-   pragma Warnings (Off, "*Warnings Off* could be omitted*");
+   pragma Warnings (Off, "*Warnings Off*could be omitted*");
 
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
@@ -247,7 +248,7 @@ private
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Dynamic_Subpool_Access);
 
-   pragma Warnings (On, "*Warnings Off* could be omitted*");
+   pragma Warnings (On, "*Warnings Off*could be omitted*");
 
    protected type Subpool_Set is
 
@@ -261,6 +262,9 @@ private
       pragma Inline (Add);
    end Subpool_Set;
 
+   subtype Storage_Array_Index is System.Storage_Elements.Storage_Offset range
+     1 .. System.Storage_Elements.Storage_Offset'Last;
+
    type Dynamic_Subpool
      (Block_Size : Storage_Elements.Storage_Count) is
      new Storage_Pools.Subpools.Root_Subpool with
@@ -268,7 +272,7 @@ private
          Used_List : Storage_Vector.Vector;
          Free_List : Storage_Vector.Vector;
          Active : Storage_Array_Access;
-         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Next_Allocation : Storage_Array_Index;
          Owner : Ada.Task_Identification.Task_Id;
       end record;
 
@@ -278,6 +282,8 @@ private
       Default_Subpool : Subpool_Handle;
       Subpools : Subpool_Set;
    end record;
+
+   use type Storage_Elements.Storage_Count;
 
    overriding
    procedure Allocate
