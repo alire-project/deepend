@@ -108,6 +108,7 @@ with System.Storage_Pools.Subpools;
 private with Ada.Containers.Vectors;
 
 package Dynamic_Pools is
+
    pragma Elaborate_Body;
    --  Needed to ensure that library routines can execute allocators
 
@@ -169,6 +170,7 @@ package Dynamic_Pools is
       return not null Subpool_Handle;
    --  The task calling Create_Subpool initially "owns" the subpool.
 
+   not overriding
    function Create_Subpool
      (Pool : in out Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count :=
@@ -212,7 +214,7 @@ package Dynamic_Pools is
    --  Subpool to null.
 
    overriding
-   function Default_Subpool_for_Pool
+   function Default_Subpool_For_Pool
      (Pool : Dynamic_Pool) return not null Subpool_Handle;
    --  This calls returns the default subpool for the pool. It raises
    --  Storage_Error if Pool.Default_Block_Size is zero. The default
@@ -222,35 +224,38 @@ package Dynamic_Pools is
       type Allocation_Type is private;
       type Allocation_Type_Access is access Allocation_Type;
    function Allocation
-     (Subpool : Subpool_Handle) return Allocation_Type_Access;
-   pragma Compile_Time_Warning
-     (Ada2012_Warnings,
-      "The current GNAT implementation maps all allocations to the " &
-      "default subpool. Once that is fixed, these generics may no " &
-      "longer be needed, except for possibly performance reasons");
+     (Subpool : Subpool_Handle) return Allocation_Type_Access
+     with Pre => Allocation_Type_Access'Storage_Size /= 0;
    --  This generic routine provides a mechanism to allocate an object of
    --  a definite subtype from a specific subpool.
+   pragma Compile_Time_Warning
+     (Ada2012_Warnings,
+     "These generics currently have an edge in performance over using the " &
+     "new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
 
    generic
       type Allocation_Type is private;
       type Allocation_Type_Access is access Allocation_Type;
    function Initialized_Allocation
      (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
-   pragma Compile_Time_Warning
-     (Ada2012_Warnings,
-      "The current GNAT implementation maps all allocations to the " &
-      "default subpool. Once that is fixed, these generics may no " &
-      "longer be needed, except for possibly performance reasons");
+      Qualified_Expression : Allocation_Type) return Allocation_Type_Access
+     with Pre => Allocation_Type_Access'Storage_Size /= 0;
    --  This generic routine provides a mechanism to allocate an object of
    --  a definite subtype from a specific subpool, and initializing the
    --  new object with a specific value.
+   pragma Compile_Time_Warning
+     (Ada2012_Warnings,
+     "These generics currently have an edge in performance over using the " &
+     "new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
 
 private
 
-   type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
+   subtype Storage_Array is System.Storage_Elements.Storage_Array
+   with Static_Predicate => Storage_Array'First = 1;
 
-   pragma Warnings (Off, "*Warnings Off* could be omitted*");
+   type Storage_Array_Access is access Storage_Array;
+
+   pragma Warnings (Off, "*Warnings Off*could be omitted*");
 
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
@@ -263,7 +268,7 @@ private
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Dynamic_Subpool_Access);
 
-   pragma Warnings (On, "*Warnings Off* could be omitted*");
+   pragma Warnings (On, "*Warnings Off*could be omitted*");
 
    protected type Subpool_Set is
 
@@ -277,6 +282,9 @@ private
       pragma Inline (Add);
    end Subpool_Set;
 
+   subtype Storage_Array_Index is System.Storage_Elements.Storage_Offset
+   with Static_Predicate => Storage_Array_Index >= 1;
+
    type Dynamic_Subpool
      (Block_Size : Storage_Elements.Storage_Count) is
      new Storage_Pools.Subpools.Root_Subpool with
@@ -284,7 +292,7 @@ private
          Used_List : Storage_Vector.Vector;
          Free_List : Storage_Vector.Vector;
          Active : Storage_Array_Access;
-         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Next_Allocation : Storage_Array_Index;
          Owner : Ada.Task_Identification.Task_Id;
       end record;
 
@@ -297,12 +305,15 @@ private
       Subpools : Subpool_Set;
    end record;
 
+   use type Storage_Elements.Storage_Count;
+
    overriding
    procedure Allocate
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count);
+      Alignment : Storage_Elements.Storage_Count)
+     with Pre => Pool.Default_Block_Size >= Size_In_Storage_Elements;
 
    overriding
    procedure Allocate_From_Subpool
@@ -310,12 +321,15 @@ private
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count;
-      Subpool : not null Subpool_Handle);
---   pragma Precondition
---     (Is_Owner (Subpool, Current_Task));
---   We want Allocate_From_Subpool to be fast. The commented out precondition
+      Subpool : not null Subpool_Handle)
+   with Pre => Is_Owner (Subpool, Current_Task) and then
+     Dynamic_Subpool (Subpool.all).Block_Size >= Size_In_Storage_Elements;
+
+--   We want Allocate_From_Subpool to be fast. The precondition
 --   is supposed to hold true, but not sure whether we want to enable the
---   precondition, if it impacts performance.
+--   precondition, if it impacts performance. Preconditions can be disabled
+--   however, by setting the Assertion_Policy to IGNORE, (or by setting
+--   Assertion_Policy (Pre => IGNORE) )
 
    overriding
    procedure Deallocate_Subpool
@@ -331,6 +345,15 @@ private
 
    overriding
    procedure Finalize   (Pool : in out Dynamic_Pool);
+
+   overriding
+   function Default_Subpool_For_Pool
+     (Pool : Dynamic_Pool) return not null Subpool_Handle
+   is (Pool.Default_Subpool);
+
+   overriding function Storage_Size
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
+   is (Pool.Subpools.Storage_Usage);
 
    pragma Inline
      (Allocate, Default_Subpool_for_Pool,
