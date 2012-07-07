@@ -72,12 +72,12 @@ package Basic_Dynamic_Pools is
 
    Default_Allocation_Block_Size : constant := 16#FFFF#;
    --  A Block Size is the size of the heap allocation used when more
-   --  storage is needed for a subpool. Larger block sizes imply less
+   --  storage is needed for the pool. Larger block sizes imply less
    --  heap allocations. Generally, better performance involves using larger
    --  block sizes.
 
    type Basic_Dynamic_Pool
-     (Default_Block_Size : Storage_Elements.Storage_Count)
+     (Block_Size : Storage_Elements.Storage_Count)
      is new Storage_Pools.Root_Storage_Pool with private;
    --  The Block_Size specifies how much memory is allocated from the heap
    --  when the storage pool needs more storage.
@@ -97,10 +97,6 @@ package Basic_Dynamic_Pools is
    procedure Set_Owner
      (Pool : in out Basic_Dynamic_Pool;
       T : Task_Id := Current_Task);
-   pragma Precondition
-     ((Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
-      or else (Is_Owner (Pool) and then T = Null_Task_Id));
-   pragma Postcondition (Is_Owner (Pool, T));
    --  An Owning task can relinquish ownership of a pool by setting the
    --  owner to a Null_Task_Id. Another task may obtain ownership of a pool,
    --  provided that the pool has no owner.
@@ -115,14 +111,17 @@ private
                              Element_Type => Storage_Array_Access);
    pragma Warnings (On, "*Warnings Off*could be omitted");
 
+   subtype Storage_Array_Index is System.Storage_Elements.Storage_Offset range
+     1 .. System.Storage_Elements.Storage_Offset'Last;
+
    type Basic_Dynamic_Pool
-     (Default_Block_Size : Storage_Elements.Storage_Count)
+     (Block_Size : Storage_Elements.Storage_Count)
      is new Storage_Pools.Root_Storage_Pool with
       record
          Used_List : Storage_Vector.Vector;
          Free_List : Storage_Vector.Vector;
          Active : Storage_Array_Access;
-         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Next_Allocation : Storage_Array_Index;
          Owner : Ada.Task_Identification.Task_Id;
       end record;
 
