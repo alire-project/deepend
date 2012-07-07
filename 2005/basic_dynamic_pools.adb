@@ -51,9 +51,7 @@ package body Basic_Dynamic_Pools is
       use type Ada.Containers.Count_Type;
    begin
 
-      if Pool.Default_Block_Size = 0 then
-         raise Program_Error;
-      end if;
+      pragma Assert (Pool.Block_Size >= Size_In_Storage_Elements);
 
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
@@ -68,7 +66,7 @@ package body Basic_Dynamic_Pools is
          else
             Pool.Active := new System.Storage_Elements.Storage_Array
               (1 .. Storage_Elements.Storage_Count'Max
-                 (Size_In_Storage_Elements, Pool.Default_Block_Size));
+                 (Size_In_Storage_Elements, Pool.Block_Size));
          end if;
 
          Pool.Next_Allocation := Pool.Active'First;
@@ -104,7 +102,7 @@ package body Basic_Dynamic_Pools is
       use type System.Storage_Elements.Storage_Count;
    begin
       Pool.Active := new System.Storage_Elements.Storage_Array
-        (1 .. Pool.Default_Block_Size);
+        (1 .. Pool.Block_Size);
       Pool.Next_Allocation := 1;
       Pool.Owner := Ada.Task_Identification.Current_Task;
    end Initialize;
@@ -124,7 +122,12 @@ package body Basic_Dynamic_Pools is
      (Pool : in out Basic_Dynamic_Pool;
       T : Task_Id := Current_Task) is
    begin
+      pragma Assert
+        ((Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
+         or else (Is_Owner (Pool) and then T = Null_Task_Id));
+
       Pool.Owner := T;
+
    end Set_Owner;
 
    --------------------------------------------------------------
