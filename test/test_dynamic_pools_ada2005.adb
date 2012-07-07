@@ -4,6 +4,7 @@ with System.Storage_Elements; use System;
 
 procedure Test_Dynamic_Pools_Ada2005
 is
+
    Pool : aliased Dynamic_Pools.Dynamic_Pool
      (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
 
@@ -86,9 +87,57 @@ is
                 ">, Desc=<" & List.Description.all & '>');
    end Print;
 
-   List : constant Node_Access := Recurse (10);
+   procedure Deallocate_Default_Subpool
+   is
+      Default_Subpool : Dynamic_Pools.Subpool_Handle :=
+        Pool.Default_Subpool_For_Pool;
+   begin
+
+      Put_Line ("Deallocating Default Subpool");
+
+      pragma Warnings (Off, "*Default_Subpool*modified*but*never referenced*");
+
+      Dynamic_Pools.Unchecked_Deallocate_Subpool (Default_Subpool);
+
+      pragma Warnings (On, "*Default_Subpool*modified*but*never referenced*");
+
+      Put_Line ("Bytes Stored=" &
+                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+   end Deallocate_Default_Subpool;
+
+   List : Node_Access;
+   Recursion_Depth : constant := 10;
+
+   use type System.Storage_Elements.Storage_Offset;
 
 begin
+
+   New_Line;
+   Put_Line ("Initial Bytes Stored=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+   Put_Line ("Allocating List Recursively to" &
+               Natural'Image (Recursion_Depth) & " subpools");
+   Put_Line ("Note: List Nodes are node descriptions allocated to new");
+   Put_Line ("       subpools, however, the node names in each node are");
+   Put_Line ("       allocated to the default subpool");
+
+   List := Recurse (Recursion_Depth);
+
+   Put_Line ("Bytes Stored=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+   Put_Line
+     ("Bytes Stored in Default Subpool=" &
+        Storage_Elements.Storage_Count'Image
+        (Dynamic_Pools.Storage_Size
+           (Subpool => Pool.Default_Subpool_For_Pool)));
+
+   Put_Line
+     ("Bytes Stored in Other subpools=" &
+        Storage_Elements.Storage_Count'Image
+        (Pool.Storage_Size - Dynamic_Pools.Storage_Size
+           (Subpool => Pool.Default_Subpool_For_Pool)));
 
    begin
 
@@ -97,12 +146,15 @@ begin
            := Dynamic_Pools.Create_Subpool (Pool'Access);
       begin
 
+         Put_Line ("Allocating objects to a new subpool");
+
          for I in 1 .. 10 loop
             declare
                Object : constant O_Access
                  := New_Ordinary_Type (Sub_Pool);
+               pragma Unreferenced (Object);
             begin
-               Put_Line ("Object Value=" & Natural'Image (Object.Value));
+               null;
             end;
          end loop;
 
@@ -121,4 +173,63 @@ begin
    end;
 
    Print (List.all);
+
+   Deallocate_Default_Subpool;
+
+   Put_Line
+     ("Bytes Stored in Default Subpool=" &
+        Storage_Elements.Storage_Count'Image
+        (Dynamic_Pools.Storage_Size
+           (Subpool => Pool.Default_Subpool_For_Pool)));
+
+   pragma Warnings (Off, "*Object*is assigned but never read*");
+   declare
+      Object : O_Access;
+   begin
+      Put_Line ("Allocating some more objects to the default subpool");
+
+      for I in 1 .. 10 loop
+         Object := new Ordinary_Type;
+      end loop;
+
+      Put_Line ("Bytes Stored=" &
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+      Put_Line
+        ("Bytes Stored in Default Subpool=" &
+           Storage_Elements.Storage_Count'Image
+           (Dynamic_Pools.Storage_Size
+              (Subpool => Pool.Default_Subpool_For_Pool)));
+   end;
+   pragma Warnings (On, "*Object*is assigned but never read*");
+
+   Put_Line ("Deallocating Default Subpool again");
+
+   Deallocate_Default_Subpool;
+
+   Put_Line
+     ("Bytes Stored in Default Subpool=" &
+        Storage_Elements.Storage_Count'Image
+        (Dynamic_Pools.Storage_Size
+           (Subpool => Pool.Default_Subpool_For_Pool)));
+
+   Put_Line ("At this point, the nodes and their descriptions still exist,");
+   Put_Line ("because their subpools still exist, however the node names");
+   Put_Line ("shouldn't exist, because the default subpool had been freed.");
+   Put_Line ("In GNAT this still may print out, probably because the memory");
+   Put_Line ("has not been overwritten, but this is dangerous");
+   Put_Line ("Don't be surprised if you see a storage error exception");
+
+   begin
+      Print (List.all);
+   exception
+      when Storage_Error =>
+         New_Line;
+         Put_Line ("STORAGE_ERROR was raised, which is not surprising");
+   end;
+
+   New_Line;
+   Put_Line ("Successful Completion");
+   New_Line;
+
 end Test_Dynamic_Pools_Ada2005;
