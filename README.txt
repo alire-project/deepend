@@ -106,8 +106,10 @@ The main differences between the Ada 2005 version and the Ada 2012
 version of the Dynamic_Pools package is that the Ada 2012 version
 takes advantages of the new features of the language, including
 defaults for discriminated types, functions with in out parameters 
-instead of access parameters, pre/post conditions, and utilization of
-the new standard subpools storage package, Ada.Storage_Pools.Subpools.
+instead of access parameters, pre/post conditions, expression functions,
+subtype predicates, invariants, simpler iterator syntax, and most 
+importantly utilization of the new standard subpools storage package, 
+Ada.Storage_Pools.Subpools.
 
 5.0 DOWNLOADING
 ==============
@@ -149,19 +151,24 @@ objects allocated from the subpool.
 7.0 TEST EXECUTABLES
 ===================
 
-A simple test executable test_deepend executable exercises the pool.
+A simple test executable test_dynamic_pools executable exercises the 
+pool. There is both an Ada 2005 version and an Ada 2012 version.
 
 In addition, there is a binary_trees test executable with two different
-implementations of a benchmark test.
+implementations of a benchmark test, again for both Ada 2005 and 
+Ada 2012.
     - the implementation under the folder;
         binary_tree_benchmark_using_access_types_with_dedicated_pools
       performs all allocations using the new operator and relies on
       Ada's access type finalization to release all objects from the
-      subpool.
+      subpool. This test utilizes the Basic_Dynamic_Pools package,
+      and has been found to give the best test results for this
+      benchmark in both Ada 2005 and Ada 2012 
     - the implementation under the folder;
        binary_tree_benchmark_using_subpool_deallocations performs all
-       allocations using Deepend's Allocate generic, rather than using
-       the "new" operator.
+       allocations using the Ada 2012 subpool allocator syntax,
+       or Deepend's Allocate generic for Ada 2005, rather than using
+       the tradional "new" operator with Ada 83 syntax.
 
 8.0 WHY DEEPEND?
 ===============
