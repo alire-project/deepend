@@ -72,12 +72,12 @@ package Basic_Dynamic_Pools is
 
    Default_Allocation_Block_Size : constant := 16#FFFF#;
    --  A Block Size is the size of the heap allocation used when more
-   --  storage is needed for a subpool. Larger block sizes imply less
+   --  storage is needed for the pool. Larger block sizes imply less
    --  heap allocations. Generally, better performance involves using larger
    --  block sizes.
 
    type Basic_Dynamic_Pool
-     (Default_Block_Size : Storage_Elements.Storage_Count :=
+     (Block_Size : Storage_Elements.Storage_Count :=
         Default_Allocation_Block_Size)
      is new Storage_Pools.Root_Storage_Pool with private;
    --  The Block_Size specifies how much memory is allocated from the heap
@@ -97,43 +97,58 @@ package Basic_Dynamic_Pools is
 
    procedure Set_Owner
      (Pool : in out Basic_Dynamic_Pool;
-      T : Task_Id := Current_Task);
-   pragma Precondition
-     ((Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
-      or else (Is_Owner (Pool) and then T = Null_Task_Id));
-   pragma Postcondition (Is_Owner (Pool, T));
+      T : Task_Id := Current_Task)
+   with
+     Pre => (Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
+       or else (Is_Owner (Pool) and then T = Null_Task_Id),
+     Post => Is_Owner (Pool, T);
+
    --  An Owning task can relinquish ownership of a pool by setting the
    --  owner to a Null_Task_Id. Another task may obtain ownership of a pool,
    --  provided that the pool has no owner.
 
 private
 
-   type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
+   subtype Storage_Array is System.Storage_Elements.Storage_Array
+   with Static_Predicate => Storage_Array'First = 1;
 
-   pragma Warnings (Off, "*Warnings Off*could be omitted");
+   type Storage_Array_Access is access Storage_Array;
+
+   pragma Warnings (Off, "*Warnings Off*could be omitted*");
+
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Storage_Array_Access);
-   pragma Warnings (On, "*Warnings Off*could be omitted");
+
+   pragma Warnings (On, "*Warnings Off*could be omitted*");
+
+   subtype Storage_Array_Index is System.Storage_Elements.Storage_Offset
+   with Static_Predicate => Storage_Array_Index >= 1;
 
    type Basic_Dynamic_Pool
-     (Default_Block_Size : Storage_Elements.Storage_Count :=
+     (Block_Size : Storage_Elements.Storage_Count :=
         Default_Allocation_Block_Size)
      is new Storage_Pools.Root_Storage_Pool with
       record
          Used_List : Storage_Vector.Vector;
          Free_List : Storage_Vector.Vector;
          Active : Storage_Array_Access;
-         Next_Allocation : System.Storage_Elements.Storage_Offset;
+         Next_Allocation : Storage_Array_Index;
          Owner : Ada.Task_Identification.Task_Id;
-      end record;
+      end record
+   with Invariant =>
+      Basic_Dynamic_Pool.Active /= null and then
+      Basic_Dynamic_Pool.Next_Allocation <= Basic_Dynamic_Pool.Active'Length;
+
+   use type Storage_Elements.Storage_Count;
 
    overriding
    procedure Allocate
      (Pool : in out Basic_Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count);
+      Alignment : Storage_Elements.Storage_Count)
+   with Pre => Pool.Block_Size >= Size_In_Storage_Elements;
 
    overriding
    procedure Deallocate
