@@ -1,3 +1,9 @@
+pragma Restrictions
+  (No_Implementation_Aspect_Specifications,
+   No_Implementation_Attributes,
+   No_Implementation_Identifiers,
+   No_Implementation_Units);
+
 with Dynamic_Pools; use Dynamic_Pools;
 with Ada.Text_IO; use Ada.Text_IO;
 with System.Storage_Elements; use System;
@@ -8,6 +14,8 @@ is
 
    Pool : Dynamic_Pools.Dynamic_Pool
      (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
+
+   pragma Default_Storage_Pool (Pool);
 
    subtype Id_String is String (1 .. 10);
    type Id_String_Access is access Id_String;
