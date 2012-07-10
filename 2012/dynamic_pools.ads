@@ -224,8 +224,7 @@ package Dynamic_Pools is
       type Allocation_Type is private;
       type Allocation_Type_Access is access Allocation_Type;
    function Allocation
-     (Subpool : Subpool_Handle) return Allocation_Type_Access
-     with Pre => Allocation_Type_Access'Storage_Size /= 0;
+     (Subpool : Subpool_Handle) return Allocation_Type_Access;
    --  This generic routine provides a mechanism to allocate an object of
    --  a definite subtype from a specific subpool.
    pragma Compile_Time_Warning
@@ -238,8 +237,7 @@ package Dynamic_Pools is
       type Allocation_Type_Access is access Allocation_Type;
    function Initialized_Allocation
      (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type) return Allocation_Type_Access
-     with Pre => Allocation_Type_Access'Storage_Size /= 0;
+      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
    --  This generic routine provides a mechanism to allocate an object of
    --  a definite subtype from a specific subpool, and initializing the
    --  new object with a specific value.
@@ -312,8 +310,7 @@ private
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count)
-     with Pre => Pool.Default_Block_Size >= Size_In_Storage_Elements;
+      Alignment : Storage_Elements.Storage_Count);
 
    overriding
    procedure Allocate_From_Subpool
@@ -322,8 +319,7 @@ private
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count;
       Subpool : not null Subpool_Handle)
-   with Pre => Is_Owner (Subpool, Current_Task) and then
-     Dynamic_Subpool (Subpool.all).Block_Size >= Size_In_Storage_Elements;
+   with Pre => Is_Owner (Subpool, Current_Task);
 
 --   We want Allocate_From_Subpool to be fast. The precondition
 --   is supposed to hold true, but not sure whether we want to enable the

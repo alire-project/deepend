@@ -119,8 +119,6 @@ package body Dynamic_Pools is
    is
       use type Sys.Storage_Pools.Subpools.Subpool_Handle;
    begin
-      pragma Assert (Pool.Default_Block_Size >= Size_In_Storage_Elements);
-
       --  In case the default subpool had been deallocated
       if Pool.Default_Subpool_For_Pool = null then
 
@@ -149,10 +147,7 @@ package body Dynamic_Pools is
       Sub : Dynamic_Subpool renames Dynamic_Subpool (Subpool.all);
    begin
 
-      pragma Assert
-        (Is_Owner (Subpool, Current_Task) and then
-           Dynamic_Subpool (Subpool.all).Block_Size >=
-           Size_In_Storage_Elements);
+      pragma Assert (Is_Owner (Subpool, Current_Task));
 
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
@@ -189,8 +184,6 @@ package body Dynamic_Pools is
         (Source => System.Address,
          Target => Allocation_Type_Access);
    begin
-
-      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
         (Storage_Address => Location,
@@ -370,8 +363,6 @@ package body Dynamic_Pools is
         (Source => System.Address,
          Target => Allocation_Type_Access);
    begin
-
-      pragma Assert (Allocation_Type_Access'Storage_Size /= 0);
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
         (Storage_Address => Location,

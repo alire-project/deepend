@@ -51,8 +51,6 @@ package body Basic_Dynamic_Pools is
       use type Ada.Containers.Count_Type;
    begin
 
-      pragma Assert (Pool.Block_Size >= Size_In_Storage_Elements);
-
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
         Pool.Active'Length - Pool.Next_Allocation then
@@ -137,6 +135,8 @@ package body Basic_Dynamic_Pools is
      (Pool : Basic_Dynamic_Pool)
       return Storage_Elements.Storage_Count
    is
+      procedure Add_Storage_Count (Position : Storage_Vector.Cursor);
+
       Result : Storage_Elements.Storage_Count := 0;
 
       procedure Add_Storage_Count (Position : Storage_Vector.Cursor)
