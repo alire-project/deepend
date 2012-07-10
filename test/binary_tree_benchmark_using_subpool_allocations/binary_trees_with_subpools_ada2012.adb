@@ -101,7 +101,6 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
 
    task type Depth_Worker
      (Start, Finish : Positive := Positive'Last) is
-      pragma Storage_Size (16#100#);
    end Depth_Worker;
 
    Results : array (1 .. Depth_Iterations) of Integer;
