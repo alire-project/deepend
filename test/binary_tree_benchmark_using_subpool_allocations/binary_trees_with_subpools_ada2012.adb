@@ -46,6 +46,12 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
+pragma Restrictions
+  (No_Implementation_Aspect_Specifications,
+   No_Implementation_Attributes,
+   No_Implementation_Identifiers,
+   No_Implementation_Units);
+
 with Trees_Ada2012;
 with Dynamic_Pools;          use Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
@@ -53,11 +59,13 @@ with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with System.Storage_Elements; use System.Storage_Elements;
-with System.Task_Info;
+with System.Multiprocessors;
 
 procedure Binary_Trees_With_Subpools_Ada2012 is
 
    package Trees renames Trees_Ada2012;
+
+   pragma Default_Storage_Pool (Trees.Pool);
 
    Default_Depth : constant := 20;
 
@@ -77,8 +85,9 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
       else
          return Positive'Min
            (Iterations,
-            System.Task_Info.Number_Of_Processors +
-              (Iterations mod System.Task_Info.Number_Of_Processors));
+            Positive (System.Multiprocessors.Number_Of_CPUs) +
+              (Iterations mod Positive
+                 (System.Multiprocessors.Number_Of_CPUs)));
       end if;
    end Get_Worker_Count;
 
