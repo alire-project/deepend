@@ -53,13 +53,13 @@ with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with System.Storage_Elements; use System.Storage_Elements;
-with System.Task_Info;
 
 procedure Binary_Trees_With_Subpools_Ada2005 is
 
    package Trees renames Trees_Ada2005;
 
    Default_Depth : constant := 20;
+   Default_Number_Of_CPUs : constant := 2;
 
    function Get_Depth return Positive is
    begin
@@ -77,8 +77,7 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
       else
          return Positive'Min
            (Iterations,
-            System.Task_Info.Number_Of_Processors +
-              (Iterations mod System.Task_Info.Number_Of_Processors));
+            Default_Number_Of_CPUs + (Iterations mod Default_Number_Of_CPUs));
       end if;
    end Get_Worker_Count;
 
