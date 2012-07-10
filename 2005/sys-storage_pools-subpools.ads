@@ -28,21 +28,12 @@ package Sys.Storage_Pools.Subpools is
    --  This provides a reference to a subpool, and serves to identify
    --  the subpool within the program.
 
-   --  function Create_Subpool
-   --    (Pool : in out Root_Storage_Pool_with_Subpools)
-   --     return not null Subpool_Handle is abstract;
-   pragma Compile_Time_Warning
-     (Ada_2012_Warnings,
-      "For Ada 2012, use in out parameter instead of access");
-
    function Create_Subpool
      (Pool : access Root_Storage_Pool_With_Subpools)
       return not null Subpool_Handle is abstract;
    --  Create subpool within given storage pool.
    --  NOTE: Additional functions that create subpools may be
    --        defined for a given storage pool that supports subpools.
-   --  [Editor's Note: This uses AI05-0143-1 to allow an in out parameter;
-   --  "access" could be used instead but would be less convenient.]
 
    function Pool_Of_Subpool
      (Subpool : not null Subpool_Handle)
@@ -65,17 +56,12 @@ package Sys.Storage_Pools.Subpools is
       Alignment : Storage_Elements.Storage_Count;
       Subpool : not null Subpool_Handle) is abstract;
    --  with Pre'Class => Pool_of_Subpool(Subpool) = Pool'Access;
-   pragma Compile_Time_Warning
-     (Ada_2012_Warnings, "Use Pre'Class, and uncomment");
    --  Allocate space from specified subpool.
-   --  [Editor's note: The precondition is as described in AI05-0145-2 and
-   --   AI05-0183-1. It could be omitted if necessary.]
 
    procedure Deallocate_Subpool
      (Pool : in out Root_Storage_Pool_With_Subpools;
       Subpool : in out Subpool_Handle) is abstract;
    --  with Pre'Class => Pool_of_Subpool(Subpool) = Pool'Access;
-   pragma Compile_Time_Warning (Ada_2012_Warnings, "Use Pre'Class");
    --  Deallocate the space for all of the objects allocated from the
    --  specified subpool. Unchecked_Deallocate_Subpool calls this.
 
@@ -108,10 +94,7 @@ package Sys.Storage_Pools.Subpools is
      (Pool : Root_Storage_Pool_With_Subpools)
       return Storage_Count;
    --  is (Storage_Elements.Storage_Count'Last);
-   pragma Compile_Time_Warning
-     (Ada_2012_Warnings, "In Ada 2012, use expression function");
    --  This can be overridden if there is a limit.
-   --  [Editor's note: This is an expression function; see AI05-0177-1.]
 
 private
 
