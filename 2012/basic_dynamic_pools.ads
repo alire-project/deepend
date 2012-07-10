@@ -147,8 +147,7 @@ private
      (Pool : in out Basic_Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count)
-   with Pre => Pool.Block_Size >= Size_In_Storage_Elements;
+      Alignment : Storage_Elements.Storage_Count);
 
    overriding
    procedure Deallocate
