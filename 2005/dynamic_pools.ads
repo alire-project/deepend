@@ -192,10 +192,6 @@ package Dynamic_Pools is
    procedure Set_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task);
-   pragma Precondition
-     ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
-      or else (Is_Owner (Subpool) and then T = Null_Task_Id));
-   pragma Postcondition (Is_Owner (Subpool, T));
    --  An Owning task can relinquish ownership of a subpool by setting the
    --  owner to a Null_Task_Id. Another task may obtain ownership of a subpool,
    --  provided that the subpool has no owner.
@@ -299,11 +295,6 @@ private
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count;
       Subpool : not null Subpool_Handle);
---   pragma Precondition
---     (Is_Owner (Subpool, Current_Task));
---   We want Allocate_From_Subpool to be fast. The commented out precondition
---   is supposed to hold true, but not sure whether we want to enable the
---   precondition, if it impacts performance.
 
    overriding
    procedure Deallocate_Subpool

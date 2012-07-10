@@ -396,7 +396,13 @@ package body Dynamic_Pools is
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task) is
    begin
+
+      pragma Assert
+        ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
+         or else (Is_Owner (Subpool) and then T = Null_Task_Id));
+
       Dynamic_Subpool (Subpool.all).Owner := T;
+
    end Set_Owner;
 
    --------------------------------------------------------------
