@@ -42,7 +42,7 @@ Please send comments to brad.moore@shaw.ca
    icm scan -subdir "*.ad?"
    icm scan 2005/*.ad{s,b}
    icm make test_dynamic_pools_ada2005
-   icm make binary_trees_without_subpools
+   icm make binary_trees_without_subpools_ada2005
    icm make binary_trees_with_subpools_ada2005
 
   You can add other compile flags as well, such as
