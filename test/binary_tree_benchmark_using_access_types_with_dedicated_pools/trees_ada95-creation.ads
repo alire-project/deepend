@@ -9,10 +9,10 @@
 
 generic
    type Tree_Node_Access is access Tree_Node;
-package Trees.Creation is
+package Trees_Ada95.Creation is
 
    function Create
      (Item : Integer;
       Depth : Integer) return Tree_Node_Access;
 
-end Trees.Creation;
+end Trees_Ada95.Creation;

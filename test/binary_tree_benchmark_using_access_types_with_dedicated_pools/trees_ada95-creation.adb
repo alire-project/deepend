@@ -7,7 +7,7 @@
 --
 --  Contributed by Brad Moore
 
-package body Trees.Creation is
+package body Trees_Ada95.Creation is
 
    function Create
      (Item : Integer;
@@ -28,4 +28,4 @@ package body Trees.Creation is
 
    end Create;
 
-end Trees.Creation;
+end Trees_Ada95.Creation;
