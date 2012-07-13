@@ -48,7 +48,7 @@
 --  Pete Kovac.
 
 with Basic_Dynamic_Pools;    use Basic_Dynamic_Pools;
-with Trees.Creation;
+with Trees_Ada95.Creation;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
