@@ -58,6 +58,8 @@ with System.Storage_Elements; use System.Storage_Elements;
 
 procedure Binary_Trees_Without_Subpools_Ada95 is
 
+   package Trees renames Trees_Ada95;
+
    Default_Number_Of_CPUs : constant := 2;
    Default_Depth : constant := 20;
 

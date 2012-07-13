@@ -7,7 +7,7 @@
 --
 --  Contributed by Brad Moore
 
-package body Trees is
+package body Trees_Ada95 is
 
    function Item_Check (Item : access Tree_Node) return Integer is
    begin
@@ -18,4 +18,4 @@ package body Trees is
       end if;
    end Item_Check;
 
-end Trees;
+end Trees_Ada95;
