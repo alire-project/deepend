@@ -1,0 +1,21 @@
+project Test_Dynamic_Pools_Ada95 is
+
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("test_dynamic_pools_ada95.adb");
+   for Source_Dirs use ("../../deepend", "../95", ".");
+
+   package Builder is
+      for Default_Switches ("ada") use ("-j4", "-g");
+      for Global_Configuration_Pragmas use "../global_pragmas_ada_95";
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat95", "-gnatwc.cfjklm.op.pr.rtu.wx.x", "-gnatyaAbcefhiIklmprStux");
+   end Compiler;
+
+   package Linker is
+   end Linker;
+
+end Test_Dynamic_Pools_Ada95;
+
