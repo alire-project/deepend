@@ -75,19 +75,6 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
-      function Storage_Usage return Storage_Elements.Storage_Count
-      is
-         Result : Storage_Elements.Storage_Count := 0;
-      begin
-         for I in 1 .. Subpools.Last loop
-            Result := Result + Storage_Size (Subpools.Subpool_List (I));
-         end loop;
-
-         return Result;
-      end Storage_Usage;
-
-      --------------------------------------------------------------
-
       procedure Deallocate_All is
       begin
          for I in 1 .. Subpools.Last loop
@@ -138,6 +125,18 @@ package body Dynamic_Pools is
            (Subpool_List => new Subpool_Array (1 .. 1024),
             Last => 0);
       end Initialize;
+      --------------------------------------------------------------
+
+      function Storage_Usage return Storage_Elements.Storage_Count
+      is
+         Result : Storage_Elements.Storage_Count := 0;
+      begin
+         for I in 1 .. Subpools.Last loop
+            Result := Result + Storage_Size (Subpools.Subpool_List (I));
+         end loop;
+
+         return Result;
+      end Storage_Usage;
 
    end Subpool_Set;
 
@@ -149,16 +148,7 @@ package body Dynamic_Pools is
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count)
    is
-      use type Sys.Storage_Pools.Subpools.Subpool_Handle;
    begin
-
-      --  In case the default subpool had been deallocated
-      if Pool.Default_Subpool = null then
-
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool'Access,
-                           Pool.Default_Block_Size);
-      end if;
 
       Allocate_From_Subpool
         (Pool,
@@ -168,6 +158,8 @@ package body Dynamic_Pools is
          Pool.Default_Subpool);
 
    end Allocate;
+
+   --------------------------------------------------------------
 
    procedure Allocate_From_Subpool
      (Pool : in out Dynamic_Pool;
@@ -355,9 +347,8 @@ package body Dynamic_Pools is
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then
-        The_Subpool = Dynamic_Subpool
-          (Pool.Default_Subpool.all)'Access
-      then
+        Subpool = Pool.Default_Subpool then
+
          Pool.Default_Subpool :=
            Create_Subpool (Pool'Access,
                            Block_Size => Pool.Default_Block_Size);
