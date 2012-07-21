@@ -72,6 +72,17 @@ package body Basic_Bounded_Dynamic_Pools is
 
    --------------------------------------------------------------
 
+   procedure Deallocate
+     (Pool : in out Basic_Dynamic_Pool;
+      Storage_Address : Address;
+      Size_In_Storage_Elements : Storage_Elements.Storage_Count;
+      Alignment : Storage_Elements.Storage_Count) is
+   begin
+      null;
+   end Deallocate;
+
+   --------------------------------------------------------------
+
    procedure Finalize   (Pool : in out Basic_Dynamic_Pool) is
    begin
       if Pool.Heap_Allocated then
@@ -112,6 +123,7 @@ package body Basic_Bounded_Dynamic_Pools is
          or else (Is_Owner (Pool) and then T = Null_Task_Id));
 
       Pool.Owner := T;
+
    end Set_Owner;
 
    --------------------------------------------------------------
