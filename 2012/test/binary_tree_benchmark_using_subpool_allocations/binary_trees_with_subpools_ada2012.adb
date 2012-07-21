@@ -123,6 +123,7 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
 
          for I in 1 .. Iterations loop
             declare
+               pragma Suppress (Accessibility_Check);
                Short_Lived_Subpool : constant Scoped_Subpool_Handle
                  := Create_Subpool
                    (Pool => Trees.Pool,
@@ -130,6 +131,7 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
+               pragma Unsuppress (Accessibility_Check);
 
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Trees.Tree_Node;
             begin
@@ -170,6 +172,7 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
      Depth_Iterations rem Worker_Count;
 
    function Create_Worker return Depth_Worker is
+      pragma Suppress (Accessibility_Check);
    begin
       if Remainder = 0 then
          End_Index := Start_Index + Iterations_Per_Task - 1;
@@ -184,6 +187,7 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
       do
          Start_Index := End_Index + 1;
       end return;
+
    end Create_Worker;
 
    Long_Lived_Tree      : Trees.Tree_Node;
@@ -201,6 +205,8 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
+         pragma Suppress (Accessibility_Check);
+
          Subpool : constant Scoped_Subpool_Handle :=
            Create_Subpool
              (Pool => Trees.Pool,
@@ -208,6 +214,8 @@ begin
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
+
+         pragma Unsuppress (Accessibility_Check);
 
          Stretch_Tree : constant Trees.Tree_Node :=
            Trees.Create (Subpool  => Subpool.Handle,
@@ -242,6 +250,8 @@ begin
 
    --  Now process the trees of different sizes in parallel and collect results
    declare
+      pragma Suppress (Accessibility_Check);
+
       Workers : array (Worker_Id) of Depth_Worker
         := (others => Create_Worker);
       pragma Unreferenced (Workers);
