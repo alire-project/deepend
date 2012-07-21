@@ -55,35 +55,18 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
-      procedure Deallocate_All is
+      function Get_Subpools_For_Finalization return Subpool_Vector.Vector is
       begin
-
-         for E in Subpools.Iterate loop
-
-            Subpools (E).Used_List.Iterate
-              (Process => Free_Storage_Element'Access);
-
-            Subpools (E).Free_List.Iterate
-              (Process => Free_Storage_Element'Access);
-
-            Free_Storage_Array (Subpools (E).Active);
-
-            --  Note: We do not deallocate the Subpool here, as doing
-            --  so causes the program to hang. Presumably, this is
-            --  because the finalization of the subpools of a pool
-            --  is handled by the implementation, and trying to free
-            --  it here leads to double deallocation.
-         end loop;
-
-      end Deallocate_All;
+         return Subpools;
+      end Get_Subpools_For_Finalization;
 
       --------------------------------------------------------------
 
-      procedure Delete (Subpool : Dynamic_Subpool_Access) is
-         Position : Subpool_Vector.Cursor;
+      procedure Delete
+        (Subpool : in out Dynamic_Subpool_Access)
+      is
+         Position : Subpool_Vector.Cursor := Subpools.Find (Subpool);
       begin
-         Position := Subpools.Find (Subpool);
-
          pragma Warnings (Off, "*Position*modified*but*never referenced*");
          Subpools.Delete (Position);
          pragma Warnings (On, "*Position*modified*but*never referenced*");
@@ -116,15 +99,6 @@ package body Dynamic_Pools is
    is
       use type Storage_Pools.Subpools.Subpool_Handle;
    begin
-
-      --  In case the default subpool had been deallocated
-      if Pool.Default_Subpool = null then
-
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool,
-                           Pool.Default_Block_Size);
-      end if;
-
       Pool.Allocate_From_Subpool
         (Storage_Address,
          Size_In_Storage_Elements,
@@ -287,9 +261,8 @@ package body Dynamic_Pools is
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then
-        The_Subpool = Dynamic_Subpool
-          (Pool.Default_Subpool.all)'Access
-      then
+        Subpool = Pool.Default_Subpool then
+
          Pool.Default_Subpool :=
            Create_Subpool (Pool,
                            Block_Size => Pool.Default_Block_Size);
@@ -302,9 +275,32 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    overriding
-   procedure Finalize   (Pool : in out Dynamic_Pool) is
+   procedure Finalize   (Pool : in out Dynamic_Pool)
+   is
+      --  Okay to get an unprotected copy of the subpool list here,
+      --  since we are now finalizing the pool, and no other tasks should
+      --  still be messing with the pool
+      Subpools : constant Subpool_Vector.Vector :=
+        Pool.Subpools.Get_Subpools_For_Finalization;
    begin
-      Pool.Subpools.Deallocate_All;
+
+      for E in Subpools.Iterate loop
+         declare
+            Subpool : Subpool_Handle :=
+              Subpool_Handle (Dynamic_Subpool_Access'(Subpools (E)));
+         begin
+
+            pragma Warnings
+              (Off, "*Subpool*modified*but*never referenced*");
+
+            Unchecked_Deallocate_Subpool (Subpool);
+
+            pragma Warnings
+              (On, "*Subpool*modified*but*never referenced*");
+
+         end;
+
+      end loop;
    end Finalize;
 
    --------------------------------------------------------------
