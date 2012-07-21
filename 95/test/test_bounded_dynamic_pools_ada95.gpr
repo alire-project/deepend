@@ -11,7 +11,7 @@ project Test_Bounded_Dynamic_Pools_Ada95 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-g", "-gnat95", "-gnatwc.cfjklm.op.pr.rtu.wx.x.l.n.s.t.u.h.i", "-gnatyaAbcefhiIklmprStuxOBn", "-gnatp", "-gnatVn", "-O3", "-gnatn", "-funroll-loops");
+      for Default_Switches ("ada") use ("-gnatf", "-g", "-gnat95", "-gnatwc.cfjklm.op.pr.rtu.wx.x.l.n.s.t.u.h.i", "-gnatyaAbcefhiIklmprStuxBn", "-gnatp", "-gnatVn", "-O3", "-gnatn", "-funroll-loops");
    end Compiler;
 
    package Linker is
