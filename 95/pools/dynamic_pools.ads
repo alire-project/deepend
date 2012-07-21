@@ -112,25 +112,6 @@ package Dynamic_Pools is
 
    subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
 
-   package Scoped_Subpools is
-      --  Scoped subpools define a controlled object that wraps a subpool
-      --  handle, that automatically deallocates the subpool when the
-      --  Scoped_Subpool_Handle object is finalized. Typically, the
-      --  Create_Subpool call returning this type will be used to place an
-      --  object in a nested scope.
-
-      type Scoped_Subpool_Handle (Handle : Subpool_Handle) is new
-        Ada.Finalization.Limited_Controlled with null record;
-       --  Calls Unchecked_Deallocate_Subpool during finalization
-
-   private
-
-       procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle);
-
-   end Scoped_Subpools;
-
-   subtype Scoped_Subpool_Handle is Scoped_Subpools.Scoped_Subpool_Handle;
-
    Default_Allocation_Block_Size : constant := 16#FFFF#;
    --  A Block Size is the size of the heap allocation used when more
    --  storage is needed for a subpool. Larger block sizes imply less
@@ -215,7 +196,21 @@ package Dynamic_Pools is
    --  a definite subtype from a specific subpool, and initializing the
    --  new object with a specific value.
 
+   type Scoped_Subpool
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count) is tagged limited private;
+   --  Scoped subpools define a controlled object that wraps a subpool
+   --  handle, that automatically deallocates the subpool when the
+   --  Scoped_Subpool_Handle object is finalized. Typically, the
+   --  Create_Subpool call returning this type will be used to place an
+   --  object in a nested scope.
+
+   function Handle
+     (Subpool : Scoped_Subpool) return Subpool_Handle;
+
 private
+
+   use Ada;
 
    type Dynamic_Subpool;
    type Dynamic_Subpool_Access is access all Dynamic_Subpool;
@@ -264,6 +259,17 @@ private
          Next_Allocation : Storage_Array_Index;
          Owner : Ada.Task_Identification.Task_Id;
       end record;
+
+   type Scoped_Subpool
+     (Pool : access Dynamic_Pool;
+      Block_Size : Storage_Elements.Storage_Count) is
+     new Finalization.Limited_Controlled with
+      record
+         Subpool : Subpool_Handle;
+      end record;
+
+   procedure Initialize (Subpool : in out Scoped_Subpool);
+   procedure Finalize (Subpool : in out Scoped_Subpool);
 
    type Dynamic_Pool (Default_Block_Size : Storage_Elements.Storage_Count)
      is new Storage_Pools.Subpools.Root_Storage_Pool_With_Subpools
