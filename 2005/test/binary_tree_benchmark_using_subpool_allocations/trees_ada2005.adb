@@ -25,6 +25,7 @@ package body Trees_Ada2005 is
       is
          Result : constant Tree_Node := New_Node (Subpool);
       begin
+
          if Depth > 0 then
             Result.all := (Left => Recurse (2 * Item - 1, Depth - 1),
                            Right => Recurse (2 * Item, Depth - 1),
