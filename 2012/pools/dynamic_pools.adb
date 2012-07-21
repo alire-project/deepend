@@ -46,6 +46,10 @@ package body Dynamic_Pools is
      (Subpool : not null Dynamic_Subpool_Access)
       return Storage_Elements.Storage_Count;
 
+   function Storage_Used
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count;
+
    protected body Subpool_Set is
 
       procedure Add (Subpool : Dynamic_Subpool_Access) is
@@ -74,13 +78,27 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
-      function Storage_Usage return Storage_Elements.Storage_Count
+      function Storage_Total return Storage_Elements.Storage_Count
       is
          Result : Storage_Elements.Storage_Count := 0;
       begin
 
          for E in Subpools.Iterate loop
             Result := Result + Storage_Size (Subpools (E));
+         end loop;
+
+         return Result;
+      end Storage_Total;
+
+      --------------------------------------------------------------
+
+      function Storage_Usage return Storage_Elements.Storage_Count
+      is
+         Result : Storage_Elements.Storage_Count := 0;
+      begin
+
+         for E in Subpools.Iterate loop
+            Result := Result + Storage_Used (Subpools (E));
          end loop;
 
          return Result;
@@ -394,7 +412,11 @@ package body Dynamic_Pools is
          Result := Result + Subpool.Used_List (E).all'Length;
       end loop;
 
-      return Result + Subpool.Next_Allocation - 1;
+      for E in Subpool.Free_List.Iterate loop
+         Result := Result + Subpool.Used_List (E).all'Length;
+      end loop;
+
+      return Result + Subpool.Active'Length;
    end Storage_Size;
 
    --------------------------------------------------------------
@@ -407,5 +429,32 @@ package body Dynamic_Pools is
    begin
       return Storage_Size (The_Subpool);
    end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count
+   is
+      Result : Storage_Elements.Storage_Count := 0;
+   begin
+
+      for E in Subpool.Used_List.Iterate loop
+         Result := Result + Subpool.Used_List (E).all'Length;
+      end loop;
+
+      return Result + Subpool.Next_Allocation - 1;
+   end Storage_Used;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count
+   is
+      The_Subpool : constant Dynamic_Subpool_Access :=
+        Dynamic_Subpool (Subpool.all)'Access;
+   begin
+      return Storage_Used (The_Subpool);
+   end Storage_Used;
 
 end Dynamic_Pools;
