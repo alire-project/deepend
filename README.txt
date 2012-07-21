@@ -36,14 +36,24 @@ Please send comments to brad.moore@shaw.ca
 2.0 BUILD INSTRUCTIONS =========
 
 - For the Irvine ICC Ada 2005 compiler on  Windows, execute the 
-  following script;
+  following script to create the Ada 2005 versions of the executables;
 
+   cd 2005
    icm new
    icm scan -subdir "*.ad?"
-   icm scan 2005/*.ad{s,b}
    icm make test_dynamic_pools_ada2005
    icm make binary_trees_without_subpools_ada2005
    icm make binary_trees_with_subpools_ada2005
+
+- For the Irvine ICC Ada 2005 compiler on  Windows, execute the 
+  following script to create the Ada 95 versions of the executables;
+
+   cd 95
+   icm new
+   icm scan -subdir "*.ad?"
+   icm make test_dynamic_pools_ada95
+   icm make binary_trees_without_subpools_ada95
+   icm make binary_trees_with_subpools_ada95
 
   You can add other compile flags as well, such as
       -compile_flags=\"-predef=(f32,lf64) -opt -debug -nochecks\"    
