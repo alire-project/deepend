@@ -184,12 +184,10 @@ begin
 
       declare
          Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool
-           (Size => 1000,
+           (Pool => Pool'Access,
+            Size => 1000,
             Heap_Allocated => True);
       begin
-
-         Bounded_Dynamic_Pools.Scoped_Subpools.Create_Subpool
-             (Pool'Access, Sub_Pool);
 
          Put_Line ("Allocating objects to a new scoped subpool");
 
