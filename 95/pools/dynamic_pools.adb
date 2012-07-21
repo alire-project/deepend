@@ -107,7 +107,6 @@ package body Dynamic_Pools is
 
       procedure Delete (Subpool : Dynamic_Subpool_Access) is
       begin
-
          Delete_Loop : for I in 1 .. Subpools.Last loop
             if Subpools.Subpool_List (I) = Subpool then
                Subpools.Subpool_List (I .. Subpools.Last - 1)
@@ -116,8 +115,9 @@ package body Dynamic_Pools is
                exit Delete_Loop;
             end if;
          end loop Delete_Loop;
-
       end Delete;
+
+      --------------------------------------------------------------
 
       procedure Initialize is
       begin
@@ -146,8 +146,7 @@ package body Dynamic_Pools is
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count)
-   is
+      Alignment : Storage_Elements.Storage_Count) is
    begin
 
       Allocate_From_Subpool
@@ -299,7 +298,6 @@ package body Dynamic_Pools is
         (1 .. Block_Size);
 
       New_Subpool.Next_Allocation := 1;
-
       New_Subpool.Owner := Ada.Task_Identification.Current_Task;
 
       Pool.Subpools.Add (New_Subpool);
@@ -376,6 +374,13 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
+   procedure Initialize (Subpool : in out Scoped_Subpool) is
+   begin
+      Subpool.Subpool := Create_Subpool (Subpool.Pool);
+   end Initialize;
+
+   --------------------------------------------------------------
+
    procedure Finalize   (Pool : in out Dynamic_Pool) is
    begin
       Pool.Subpools.Deallocate_All;
@@ -383,15 +388,23 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   package body Scoped_Subpools is
-      procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle) is
-         Subpool : Subpool_Handle := Scoped_Subpool.Handle;
-      begin
-         pragma Warnings (Off, "*Subpool*modified*but*never referenced*");
-         Unchecked_Deallocate_Subpool (Subpool);
-         pragma Warnings (On, "*Subpool*modified*but*never referenced*");
-      end Finalize;
-   end Scoped_Subpools;
+   procedure Finalize (Subpool : in out Scoped_Subpool) is
+   begin
+     --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
+      --  dispatch to Deallocate_Subpool directly.
+      Deallocate_Subpool
+        (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool
+         (Subpool.Subpool).all),
+         Subpool.Subpool);
+   end Finalize;
+
+   --------------------------------------------------------------
+
+   function Handle
+     (Subpool : Scoped_Subpool) return Subpool_Handle is
+   begin
+      return Subpool.Subpool;
+   end Handle;
 
    --------------------------------------------------------------
 
@@ -468,6 +481,11 @@ package body Dynamic_Pools is
      (Subpool : Subpool_Handle;
       T : Task_Id := Current_Task) is
    begin
+
+      pragma Assert
+        ((Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
+         or else (Is_Owner (Subpool) and then T = Null_Task_Id));
+
       Dynamic_Subpool (Subpool.all).Owner := T;
    end Set_Owner;
 
@@ -520,8 +538,8 @@ package body Dynamic_Pools is
       --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
       --  dispatch to Deallocate_Subpool directly.
       Deallocate_Subpool
-        (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
-         Subpool);
+         (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
+          Subpool);
 
    end Unchecked_Deallocate_Subpool;
 
