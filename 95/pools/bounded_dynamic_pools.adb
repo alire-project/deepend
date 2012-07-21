@@ -55,7 +55,6 @@ package body Bounded_Dynamic_Pools is
 
       procedure Deallocate_All is
       begin
-
          for I in 1 .. Subpools.Last loop
 
             if Subpools.Subpool_List (I).Reusable then
@@ -111,12 +110,14 @@ package body Bounded_Dynamic_Pools is
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count) is
    begin
+
       Allocate_From_Subpool
         (Pool,
          Storage_Address,
          Size_In_Storage_Elements,
          Alignment,
          Default_Subpool_For_Pool (Pool));
+
    end Allocate;
 
    --------------------------------------------------------------
@@ -314,7 +315,6 @@ package body Bounded_Dynamic_Pools is
         (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool
          (Subpool.Subpool).all),
          Subpool.Subpool);
-
    end Finalize;
 
    --------------------------------------------------------------
@@ -391,7 +391,6 @@ package body Bounded_Dynamic_Pools is
          or else (Is_Owner (Subpool) and then T = Null_Task_Id));
 
       Dynamic_Subpool (Subpool.all).Owner := T;
-
    end Set_Owner;
 
    --------------------------------------------------------------
