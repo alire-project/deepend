@@ -136,7 +136,7 @@ is
       pragma Warnings (On, "*Default_Subpool*modified*but*never referenced*");
 
       Put_Line ("Bytes Stored=" &
-                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
    end Deallocate_Default_Subpool;
 
    List : Node_Access;
@@ -164,7 +164,9 @@ is
 begin
 
    New_Line;
-   Put_Line ("Initial Bytes Stored=" &
+   Put_Line ("Initial Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
 
    Put_Line ("Allocating List Recursively to" &
@@ -175,19 +177,24 @@ begin
 
    List := Recurse (Recursion_Depth);
 
-   Put_Line ("Bytes Stored=" &
+   Put_Line ("Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
 
-   Put_Line
-     ("Bytes Stored in Default Subpool=" &
-        Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size
-           (Subpool => Pool.Default_Subpool_For_Pool)));
+   Put_Line ("Storage Used in Default Subpool=" &
+               Storage_Elements.Storage_Count'Image
+       (Bounded_Dynamic_Pools.Storage_Used
+          (Subpool => Pool.Default_Subpool_For_Pool)) &
+               ", Storage Size=" &
+       Storage_Elements.Storage_Count'Image
+       (Bounded_Dynamic_Pools.Storage_Size
+          (Subpool => Pool.Default_Subpool_For_Pool)));
 
    Put_Line
      ("Bytes Stored in Other subpools=" &
         Storage_Elements.Storage_Count'Image
-        (Pool.Storage_Size - Bounded_Dynamic_Pools.Storage_Size
+        (Pool.Storage_Used - Bounded_Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    pragma Warnings (Off, "*Object*is*never read*");
@@ -208,7 +215,8 @@ begin
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image
+                  (Pool.Storage_Used));
 
       Put_Line ("Deallocating Subpool...");
 
@@ -216,13 +224,15 @@ begin
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
    end;
 
    declare
 
-      Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool_Handle
-        := Pool.Create_Subpool (Size    => 400);
+      Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool
+        := Bounded_Dynamic_Pools.Scoped_Subpools.Create_Subpool
+          (Pool => Pool,
+           Size    => 400);
 
       Object : RC_Access;
    begin
@@ -240,7 +250,7 @@ begin
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
       Put_Line ("Deallocating Subpool...");
 
@@ -248,7 +258,7 @@ begin
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
    end;
 
    pragma Warnings (On, "*Object*is*never read*");
@@ -256,7 +266,7 @@ begin
    Put_Line ("After Finalization, Object Count=" &
                Natural'Image (Object_Count));
    Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
    begin
 
@@ -275,7 +285,7 @@ begin
          end loop;
 
          Put_Line ("Bytes Stored=" &
-                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
          Put_Line ("Deallocating Subpool...");
 
@@ -285,8 +295,9 @@ begin
       end;
 
       declare
-         Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool_Handle
-           := Bounded_Dynamic_Pools.Create_Subpool (Pool, 1000);
+         Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool
+           := Bounded_Dynamic_Pools.Scoped_Subpools.Create_Subpool
+             (Pool, 1000);
       begin
 
          Put_Line ("Allocating objects to a new scoped subpool");
@@ -308,12 +319,12 @@ begin
          end loop;
 
          Put_Line ("Bytes Stored Before Finalization=" &
-                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
       end;
 
       Put_Line ("Bytes Stored After Finalization=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
    end;
 
    Print (List.all);
@@ -323,7 +334,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size
+        (Bounded_Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    pragma Warnings (Off, "*Object*is assigned but never read*");
@@ -339,12 +350,12 @@ begin
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
       Put_Line
         ("Bytes Stored in Default Subpool=" &
            Storage_Elements.Storage_Count'Image
-           (Bounded_Dynamic_Pools.Storage_Size
+           (Bounded_Dynamic_Pools.Storage_Used
               (Subpool => Pool.Default_Subpool_For_Pool)));
    end;
    pragma Warnings (On, "*Object*is assigned but never read*");
@@ -356,7 +367,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size
+        (Bounded_Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    Put_Line ("At this point, the nodes and their descriptions still exist,");
