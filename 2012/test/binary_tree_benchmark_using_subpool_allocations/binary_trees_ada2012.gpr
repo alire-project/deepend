@@ -11,7 +11,7 @@ project Binary_Trees_Ada2012 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.i.h.l.o.s.t.u.n", "-gnatyaAbcefhikIlnmprStuxBO", "-gnat12", "-gnatVn", "-g", "-gnatp", "-O3", "-gnatn", "-funroll-loops");
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.i.h.l.o.s.t.u.n", "-gnatyaAbcefhikIlnmprStuxBO", "-gnat12", "-gnatVn", "-g", "-O3", "-gnatn", "-funroll-loops", "-fcallgraph-info=su,da", "-gnatp");
    end Compiler;
 
    package Linker is
