@@ -114,7 +114,9 @@ package Bounded_Dynamic_Pools is
    subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
    subtype Subpool_Count is Positive;
 
-   type Scoped_Subpool (<>) is tagged limited private;
+   type Scoped_Subpool
+     (Size : Storage_Elements.Storage_Count;
+      Heap_Allocated : Boolean) is tagged limited private;
    --  Scoped subpools define a controlled object that wraps a subpool
    --  handle, that automatically deallocates the subpool when the
    --  Scoped_Subpool_Handle object is finalized. Typically, the
@@ -157,10 +159,9 @@ package Bounded_Dynamic_Pools is
 
    package Scoped_Subpools is
 
-      function Create_Subpool
+      procedure Create_Subpool
         (Pool : access Dynamic_Pool;
-         Size : Storage_Elements.Storage_Count;
-         Heap_Allocated : Boolean := True) return Scoped_Subpool;
+         Subpool : out Scoped_Subpool);
       --  The task calling Create_Subpool initially "owns" the subpool.
 
    end Scoped_Subpools;
