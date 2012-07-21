@@ -52,6 +52,7 @@ with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Exceptions;          use Ada.Exceptions;
 with System.Storage_Elements; use System.Storage_Elements;
 
 procedure Binary_Trees_With_Subpools_Ada2005 is
@@ -95,6 +96,9 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
 
    Results : array (1 .. Depth_Iterations) of Integer;
    Iteration_Tracking : array (1 .. Depth_Iterations) of Positive;
+
+   Failure_Detected : Boolean := False;
+   pragma Atomic (Failure_Detected);
 
    task body Depth_Worker
    is
@@ -145,6 +149,11 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
 
          Results (Depth_Iter) := Check;
       end loop;
+
+   exception
+      when E : others =>
+         Failure_Detected := True;
+         Put_Line ("Depth Worker Failed: " & Exception_Information (E));
 
    end Depth_Worker;
 
@@ -210,6 +219,11 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line
+              ("Stretch Depth Task Failed: " & Exception_Information (E));
       end Stretch_Depth_Task;
 
       task Create_Long_Lived_Tree_Task is
@@ -225,6 +239,10 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line ("Long Lived Task Failed: " & Exception_Information (E));
       end Create_Long_Lived_Tree_Task;
    begin
       null;
@@ -256,5 +274,11 @@ begin
    Check := Trees.Item_Check (Long_Lived_Tree);
    Put (Item => Check, Width => 0);
    New_Line;
+
+   if Failure_Detected then
+      New_Line;
+      Put_Line ("ERROR: Some Tasks failed");
+      New_Line;
+   end if;
 
 end Binary_Trees_With_Subpools_Ada2005;
