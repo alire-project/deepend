@@ -99,12 +99,11 @@
 --  containing task components to a subpool.
 
 with Ada.Task_Identification; use Ada.Task_Identification;
+with Ada.Finalization;
 
 with System.Storage_Elements; use System;
 with Sys.Storage_Pools.Subpools;
 use Sys;
-
-with Ada.Finalization;
 
 package Bounded_Dynamic_Pools is
 
