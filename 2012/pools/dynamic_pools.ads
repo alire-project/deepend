@@ -184,11 +184,21 @@ package Dynamic_Pools is
    overriding function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of memory allocated from the pool
+   --  and its subpools, including storage that is allocated but not used.
+
+   function Storage_Size
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the
+   --  subpool, including storage that is allocated but not used.
+
+   function Storage_Used
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the pool
    --  and its subpools. It assumes all currently filled blocks are fully
    --  allocated, but returns the exact amount for the current active block
    --  for each subpool.
 
-   function Storage_Size
+   function Storage_Used
      (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
    --  Indicates the current approximate amount of memory allocated from the
    --  subpool. It assumes all currently filled blocks are fully allocated,
@@ -277,6 +287,7 @@ private
       procedure Add (Subpool : Dynamic_Subpool_Access);
       procedure Delete (Subpool : in out Dynamic_Subpool_Access);
       function Storage_Usage return Storage_Elements.Storage_Count;
+      function Storage_Total return Storage_Elements.Storage_Count;
       function Get_Subpools_For_Finalization  return Subpool_Vector.Vector;
 
    private
@@ -352,6 +363,10 @@ private
    is (Pool.Default_Subpool);
 
    overriding function Storage_Size
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
+   is (Pool.Subpools.Storage_Total);
+
+   function Storage_Used
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
    is (Pool.Subpools.Storage_Usage);
 
