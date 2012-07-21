@@ -1,0 +1,24 @@
+project Bounded_Binary_Trees_Ada2012 is
+
+   for Object_Dir use "../obj/";
+   for Exec_Dir use "../../../bin/";
+   for Main use ("bounded_binary_trees_with_subpools_ada2012.adb");
+   for Source_Dirs use ("../../pools", ".");
+
+   package Builder is
+      for Default_Switches ("ada") use ("-j4", "-g");
+      for Global_Configuration_Pragmas use "../../global_pragmas";
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.i.h.l.o.s.t.u.n", "-gnatyaAbcefhikIlnmprStuxBO", "-gnat12", "-gnatVn", "-g", "-O3", "-gnatn", "-funroll-loops", "-gnatp");
+   end Compiler;
+
+   package Linker is
+   end Linker;
+
+   package Binder is
+   end Binder;
+
+end Bounded_Binary_Trees_Ada2012;
+
