@@ -168,7 +168,29 @@ begin
          pragma Warnings (On, "*Sub_Pool* modified*but*never referenced*");
       end;
 
-      Put_Line ("Bytes Stored=" &
+      declare
+         Sub_Pool : Dynamic_Pools.Scoped_Subpool_Handle
+           := Dynamic_Pools.Create_Subpool (Pool'Access);
+      begin
+
+         Put_Line ("Allocating objects to a new scoped subpool");
+
+         for I in 1 .. 10 loop
+            declare
+               Object : constant O_Access
+                 := New_Ordinary_Type (Sub_Pool.Handle);
+               pragma Unreferenced (Object);
+            begin
+               null;
+            end;
+         end loop;
+
+         Put_Line ("Bytes Stored Before Finalization=" &
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+      end;
+
+      Put_Line ("Bytes Stored After Finalization=" &
                   Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end;
 
