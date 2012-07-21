@@ -49,10 +49,11 @@
 
 with Basic_Dynamic_Pools;    use Basic_Dynamic_Pools;
 with Trees.Creation;
-with Ada.Text_IO;            use Ada.Text_IO;
-with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
-with Ada.Command_Line;       use Ada.Command_Line;
-with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
+with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
+with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Task_Identification; use Ada.Task_Identification;
 with System.Storage_Elements; use System.Storage_Elements;
 
@@ -70,8 +71,7 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count (Iterations : Natural) return Positive
-   is
+   function Get_Worker_Count (Iterations : Positive) return Positive is
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
@@ -88,12 +88,17 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
                                                       Requested_Depth);
    Depth_Iterations : constant Positive := (Max_Depth - Min_Depth) / 2 + 1;
 
+   Worker_Count     : constant Positive := Get_Worker_Count (Depth_Iterations);
+
    task type Depth_Worker
      (Start, Finish : Positive := Positive'Last) is
    end Depth_Worker;
 
    Results : array (1 .. Depth_Iterations) of Integer;
    Iteration_Tracking : array (1 .. Depth_Iterations) of Positive;
+
+   Failure_Detected : Boolean := False;
+   pragma Atomic (Failure_Detected);
 
    task body Depth_Worker
    is
@@ -114,8 +119,9 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
             declare
 
                Short_Lived_Pool : Basic_Dynamic_Pool
-                 (Block_Size =>
-                    2 * (2 ** (Depth + 1)) * Trees.Node_Size);
+                 (Size =>
+                    2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+                  Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -142,20 +148,24 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
                Check := Check +
                  Trees.Item_Check (Short_Lived_Tree_1) +
                  Trees.Item_Check (Short_Lived_Tree_2);
+
             end;
          end loop;
 
          Results (Depth_Iter) := Check;
       end loop;
 
+   exception
+      when E : others =>
+         Failure_Detected := True;
+         Put_Line ("Depth Worker Failed: " & Exception_Information (E));
+
    end Depth_Worker;
+
+   subtype Worker_Id is Positive range 1 .. Worker_Count;
 
    Start_Index     : Positive := 1;
    End_Index       : Positive := Depth_Iterations;
-
-   Worker_Count    : constant Positive := Get_Worker_Count (Depth_Iterations);
-
-   subtype Worker_Id is Positive range 1 .. Worker_Count;
 
    Iterations_Per_Task : constant Positive :=
      Depth_Iterations / Worker_Count;
@@ -180,8 +190,9 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree_Pool : aliased Basic_Dynamic_Pool
-     (Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+   Long_Lived_Tree_Pool : Basic_Dynamic_Pool
+     (Size => 2 ** (Max_Depth + 1) * Trees.Node_Size,
+      Heap_Allocated => True);
    --  Since we know how much storage we need, we might as well
    --  specify a block size large enough to hold all the objects
    --  in a single block
@@ -212,7 +223,8 @@ begin
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
          Stretch_Pool : Basic_Dynamic_Pool
-           (Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+           (Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+            Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -232,6 +244,11 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line
+              ("Stretch Depth Task Failed: " & Exception_Information (E));
       end Stretch_Depth_Task;
 
       task Create_Long_Lived_Tree_Task is
@@ -243,6 +260,10 @@ begin
          --  here.
          Set_Owner (Long_Lived_Tree_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line ("Long Lived Task Failed: " & Exception_Information (E));
       end Create_Long_Lived_Tree_Task;
    begin
       null;
@@ -274,5 +295,11 @@ begin
    Check := Trees.Item_Check (Long_Lived_Tree);
    Put (Item => Check, Width => 0);
    New_Line;
+
+  if Failure_Detected then
+      New_Line;
+      Put_Line ("ERROR: Some Tasks failed");
+      New_Line;
+   end if;
 
 end Binary_Trees_Without_Subpools_Ada2005;
