@@ -116,6 +116,10 @@ package Dynamic_Pools is
    --  Set to true to generate compiler warnings about changes still
    --  needed for Ada 2012
 
+   --  pragma Preelaborate;
+   pragma Compile_Time_Warning
+     (Ada2012_Warnings, "Should Ada.U_D_S have pragma Preelaborate?");
+
    subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
 
    package Scoped_Subpools is
@@ -271,9 +275,9 @@ private
    protected type Subpool_Set is
 
       procedure Add (Subpool : Dynamic_Subpool_Access);
-      procedure Delete (Subpool : Dynamic_Subpool_Access);
-      procedure Deallocate_All;
+      procedure Delete (Subpool : in out Dynamic_Subpool_Access);
       function Storage_Usage return Storage_Elements.Storage_Count;
+      function Get_Subpools_For_Finalization  return Subpool_Vector.Vector;
 
    private
       Subpools : Subpool_Vector.Vector;
