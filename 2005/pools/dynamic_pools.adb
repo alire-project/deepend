@@ -55,24 +55,6 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
-      function Storage_Usage return Storage_Elements.Storage_Count
-      is
-         Result : Storage_Elements.Storage_Count := 0;
-
-         procedure Subpool_Storage_Usage (Position : Subpool_Vector.Cursor)
-         is
-            Subpool : constant Dynamic_Subpool_Access :=
-              Subpool_Vector.Element (Position);
-         begin
-            Result := Result + Storage_Size (Subpool);
-         end Subpool_Storage_Usage;
-      begin
-         Subpools.Iterate (Subpool_Storage_Usage'Access);
-         return Result;
-      end Storage_Usage;
-
-      --------------------------------------------------------------
-
       procedure Deallocate_All
       is
          procedure Deallocate_Subpools (Position : Subpool_Vector.Cursor) is
@@ -97,14 +79,30 @@ package body Dynamic_Pools is
       --------------------------------------------------------------
 
       procedure Delete (Subpool : Dynamic_Subpool_Access) is
-         Position : Subpool_Vector.Cursor;
+         Position : Subpool_Vector.Cursor := Subpools.Find (Subpool);
       begin
-         Position := Subpools.Find (Subpool);
-
          pragma Warnings (Off, "*Position*modified*but*never referenced*");
          Subpools.Delete (Position);
          pragma Warnings (On, "*Position*modified*but*never referenced*");
       end Delete;
+
+      --------------------------------------------------------------
+
+      function Storage_Usage return Storage_Elements.Storage_Count
+      is
+         Result : Storage_Elements.Storage_Count := 0;
+
+         procedure Subpool_Storage_Usage (Position : Subpool_Vector.Cursor)
+         is
+            Subpool : constant Dynamic_Subpool_Access :=
+              Subpool_Vector.Element (Position);
+         begin
+            Result := Result + Storage_Size (Subpool);
+         end Subpool_Storage_Usage;
+      begin
+         Subpools.Iterate (Subpool_Storage_Usage'Access);
+         return Result;
+      end Storage_Usage;
 
    end Subpool_Set;
 
@@ -115,24 +113,16 @@ package body Dynamic_Pools is
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count)
-   is
-      use type Sys.Storage_Pools.Subpools.Subpool_Handle;
+      Alignment : Storage_Elements.Storage_Count) is
    begin
-      --  In case the default subpool had been deallocated
-      if Pool.Default_Subpool_For_Pool = null then
-
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool'Access,
-                           Pool.Default_Block_Size);
-      end if;
-
       Pool.Allocate_From_Subpool
         (Storage_Address,
          Size_In_Storage_Elements,
          Alignment,
          Pool.Default_Subpool_For_Pool);
    end Allocate;
+
+   --------------------------------------------------------------
 
    overriding
    procedure Allocate_From_Subpool
@@ -288,9 +278,8 @@ package body Dynamic_Pools is
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then
-        The_Subpool = Dynamic_Subpool
-          (Pool.Default_Subpool.all)'Access
-      then
+        Subpool = Pool.Default_Subpool then
+
          Pool.Default_Subpool :=
            Create_Subpool (Pool'Access,
                            Block_Size => Pool.Default_Block_Size);
