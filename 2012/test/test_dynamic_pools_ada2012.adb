@@ -144,6 +144,10 @@ is
    type O_Access is access Ordinary_Type;
    for O_Access'Storage_Pool use Pool;
 
+   function New_Ordinary_Type is new Dynamic_Pools.Initialized_Allocation
+     (Ordinary_Type,
+      O_Access);
+
    Recursion_Depth : constant := 10;
 
    use type System.Storage_Elements.Storage_Offset;
@@ -177,7 +181,8 @@ begin
         (Pool.Storage_Size - Dynamic_Pools.Storage_Size
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
-   pragma Warnings (Off, "*Object*is assigned but never read*");
+   pragma Warnings (Off, "*Object*assigned but never read*");
+
    declare
       Sub_Pool : Dynamic_Pools.Subpool_Handle
         := Dynamic_Pools.Create_Subpool (Pool);
@@ -205,7 +210,8 @@ begin
       Put_Line ("Bytes Stored=" &
                   Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end;
-   pragma Warnings (On, "*Object*is assigned but never read*");
+
+   pragma Warnings (On, "*Object*assigned but never read*");
 
    begin
 
@@ -233,7 +239,34 @@ begin
          pragma Warnings (On, "*Sub_Pool* modified*but*never referenced*");
       end;
 
-      Put_Line ("Bytes Stored=" &
+      declare
+         Sub_Pool : Dynamic_Pools.Scoped_Subpool_Handle
+           := Dynamic_Pools.Create_Subpool (Pool);
+      begin
+
+         Put_Line ("Allocating objects to a new scoped subpool");
+
+         for I in 1 .. 10 loop
+            declare
+               Object : constant O_Access
+               --  := new (Sub_Pool.Handle) Ordinary_Type'(Value => I);
+                 := New_Ordinary_Type (Sub_Pool.Handle,
+                                       Ordinary_Type'(Value => I));
+               pragma Compile_Time_Warning (Dynamic_Pools.Ada2012_Warnings,
+                                            "GNAT subpool bug");
+
+               pragma Unreferenced (Object);
+            begin
+               null;
+            end;
+         end loop;
+
+         Put_Line ("Bytes Stored Before Finalization=" &
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+      end;
+
+      Put_Line ("Bytes Stored After Finalization=" &
                   Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end;
 
