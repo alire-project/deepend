@@ -159,7 +159,7 @@ package body Bounded_Dynamic_Pools is
    begin
 
       Allocate_From_Subpool
-        (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).
+        (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all,
          Storage_Address => Location,
          Size_In_Storage_Elements =>
            Allocation_Type'Max_Size_In_Storage_Elements,
@@ -206,8 +206,8 @@ package body Bounded_Dynamic_Pools is
    is
       New_Subpool : constant Dynamic_Subpool_Access
         := new Dynamic_Subpool
-          (Storage_Pools.Subpools.Root_Subpool with
-           Size => Size);
+          (Size => Size,
+           Reusable => False);
 
       Result : constant Subpool_Handle := New_Subpool.all'Unchecked_Access;
    begin
@@ -231,35 +231,30 @@ package body Bounded_Dynamic_Pools is
 
    package body Scoped_Subpools is
 
-      function Create_Subpool
+      procedure Create_Subpool
         (Pool : access Dynamic_Pool;
          Size : Storage_Elements.Storage_Count;
-         Heap_Allocated : Boolean := True) return Scoped_Subpool is
+         Heap_Allocated : Boolean := True;
+         Subpool : out Scoped_Subpool) is
       begin
          if Heap_Allocated then
-            return Result : constant Scoped_Subpool
-              (Size => Size,
-               Heap_Allocated => True) :=
-              (Finalization.Limited_Controlled with Size => Size,
-               Heap_Allocated => True,
-               Subpool => Create_Subpool (Pool, Size)
-              )
-            do
-               null;
-            end return;
+            Subpool :=-
+              Finalization.Limited_Controlled with
+              Size => Size,
+              Heap_Allocated => True,
+              Subpool => Create_Subpool (Pool, Size));
 
          else
-            return Result : Scoped_Subpool
-              (Size => Size, Heap_Allocated => False) :=
+            Subpool :=
               (Finalization.Limited_Controlled with
                Size => Size,
                Heap_Allocated => False,
-               Subpool => <>,
+               Subpool => null,
                Storage =>
                  (Storage_Pools.Subpools.Root_Subpool with
                   Size => Size,
                   Reusable => True,
-                  Active => <>,
+                  Active => ,
                   Next_Allocation => 1,
                   Owner => Ada.Task_Identification.Current_Task,
                   Reclaimed => False))
@@ -463,7 +458,7 @@ package body Bounded_Dynamic_Pools is
 
       --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
       --  dispatch to Deallocate_Subpool directly.
-      Deallocate_Subpool 
+      Deallocate_Subpool
          (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool),
           Subpool);
 
