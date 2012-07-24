@@ -73,6 +73,7 @@ package body Basic_Dynamic_Pools is
 
       Storage_Address := Pool.Active (Pool.Next_Allocation)'Address;
       Pool.Next_Allocation := Pool.Next_Allocation + Size_In_Storage_Elements;
+
    end Allocate;
 
    --------------------------------------------------------------
@@ -95,9 +96,7 @@ package body Basic_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool)
-   is
-      use type System.Storage_Elements.Storage_Count;
+   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
    begin
       Pool.Active := new System.Storage_Elements.Storage_Array
         (1 .. Pool.Block_Size);
@@ -150,8 +149,35 @@ package body Basic_Dynamic_Pools is
    begin
       Pool.Used_List.Iterate
         (Process => Add_Storage_Count'Access);
+      Pool.Free_List.Iterate
+        (Process => Add_Storage_Count'Access);
+
+      return Result + Pool.Active'Length;
+   end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Basic_Dynamic_Pool)
+      return Storage_Elements.Storage_Count
+   is
+      procedure Add_Storage_Count (Position : Storage_Vector.Cursor);
+
+      Result : Storage_Elements.Storage_Count := 0;
+
+      procedure Add_Storage_Count (Position : Storage_Vector.Cursor)
+      is
+         use type Storage_Elements.Storage_Offset;
+      begin
+         Result := Result + Storage_Vector.Element (Position)'Length;
+      end Add_Storage_Count;
+
+      use type Storage_Elements.Storage_Count;
+   begin
+      Pool.Used_List.Iterate
+        (Process => Add_Storage_Count'Access);
 
       return Result + Pool.Next_Allocation - 1;
-   end Storage_Size;
+   end Storage_Used;
 
 end Basic_Dynamic_Pools;

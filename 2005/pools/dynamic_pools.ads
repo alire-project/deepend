@@ -121,18 +121,18 @@ package Dynamic_Pools is
       --  Create_Subpool call returning this type will be used to place an
       --  object in a nested scope.
 
-      type Scoped_Subpool_Handle (Handle : Subpool_Handle) is new
+      type Scoped_Subpool (Handle : Subpool_Handle) is new
         Ada.Finalization.Limited_Controlled with null record;
        --  Calls Unchecked_Deallocate_Subpool during finalization
 
    private
 
       overriding
-       procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle);
+       procedure Finalize (Subpool : in out Scoped_Subpool);
 
    end Scoped_Subpools;
 
-   subtype Scoped_Subpool_Handle is Scoped_Subpools.Scoped_Subpool_Handle;
+   subtype Scoped_Subpool is Scoped_Subpools.Scoped_Subpool;
 
    Default_Allocation_Block_Size : constant := 16#FFFF#;
    --  A Block Size is the size of the heap allocation used when more
@@ -151,7 +151,7 @@ package Dynamic_Pools is
 
    overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return not null Subpool_Handle;
+     (Pool : not null access Dynamic_Pool) return not null Subpool_Handle;
    --  The task calling Create_Subpool initially "owns" the subpool.
    --  Uses the Default_Block_Size of the Pool when more storage is needed,
    --  except if Pool.Default_Block_Size is zero, then the
@@ -159,25 +159,35 @@ package Dynamic_Pools is
 
    not overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool;
+     (Pool : not null access Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count)
       return not null Subpool_Handle;
    --  The task calling Create_Subpool initially "owns" the subpool.
 
    function Create_Subpool
-     (Pool : access Dynamic_Pool;
+     (Pool : not null access Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count :=
-        Default_Allocation_Block_Size) return Scoped_Subpool_Handle;
+        Default_Allocation_Block_Size) return Scoped_Subpool;
    --  The task calling Create_Subpool initially "owns" the subpool.
 
    overriding function Storage_Size
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the pool
+   --  and its subpools, including storage that is allocated but not used.
+
+   function Storage_Size
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the
+   --  subpool, including storage that is allocated but not used.
+
+   function Storage_Used
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of memory allocated from the pool
    --  and its subpools. It assumes all currently filled blocks are fully
    --  allocated, but returns the exact amount for the current active block
    --  for each subpool.
 
-   function Storage_Size
+   function Storage_Used
      (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
    --  Indicates the current approximate amount of memory allocated from the
    --  subpool. It assumes all currently filled blocks are fully allocated,
@@ -252,6 +262,7 @@ private
       procedure Delete (Subpool : Dynamic_Subpool_Access);
       procedure Deallocate_All;
       function Storage_Usage return Storage_Elements.Storage_Count;
+      function Storage_Total return Storage_Elements.Storage_Count;
 
    private
       Subpools : Subpool_Vector.Vector;

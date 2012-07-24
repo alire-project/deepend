@@ -114,6 +114,7 @@ package body Basic_Bounded_Dynamic_Pools is
          or else (Is_Owner (Pool) and then T = Null_Task_Id));
 
       Pool.Owner := T;
+
    end Set_Owner;
 
    --------------------------------------------------------------
@@ -123,7 +124,16 @@ package body Basic_Bounded_Dynamic_Pools is
      (Pool : Basic_Dynamic_Pool)
       return Storage_Elements.Storage_Count is
    begin
-      return Pool.Next_Allocation - 1;
+      return Pool.Size;
    end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Basic_Dynamic_Pool)
+      return Storage_Elements.Storage_Count is
+   begin
+      return Pool.Next_Allocation - 1;
+   end Storage_Used;
 
 end Basic_Bounded_Dynamic_Pools;

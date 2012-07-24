@@ -46,6 +46,10 @@ package body Dynamic_Pools is
      (Subpool : not null Dynamic_Subpool_Access)
       return Storage_Elements.Storage_Count;
 
+   function Storage_Used
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count;
+
    protected body Subpool_Set is
 
       procedure Add (Subpool : Dynamic_Subpool_Access) is
@@ -88,6 +92,24 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
+      function Storage_Total return Storage_Elements.Storage_Count
+      is
+         Result : Storage_Elements.Storage_Count := 0;
+
+         procedure Subpool_Storage_Total (Position : Subpool_Vector.Cursor)
+         is
+            Subpool : constant Dynamic_Subpool_Access :=
+              Subpool_Vector.Element (Position);
+         begin
+            Result := Result + Storage_Size (Subpool);
+         end Subpool_Storage_Total;
+      begin
+         Subpools.Iterate (Subpool_Storage_Total'Access);
+         return Result;
+      end Storage_Total;
+
+      --------------------------------------------------------------
+
       function Storage_Usage return Storage_Elements.Storage_Count
       is
          Result : Storage_Elements.Storage_Count := 0;
@@ -97,7 +119,7 @@ package body Dynamic_Pools is
             Subpool : constant Dynamic_Subpool_Access :=
               Subpool_Vector.Element (Position);
          begin
-            Result := Result + Storage_Size (Subpool);
+            Result := Result + Storage_Used (Subpool);
          end Subpool_Storage_Usage;
       begin
          Subpools.Iterate (Subpool_Storage_Usage'Access);
@@ -189,7 +211,7 @@ package body Dynamic_Pools is
 
    overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool) return not null Subpool_Handle is
+     (Pool : not null access Dynamic_Pool) return not null Subpool_Handle is
    begin
 
       if Pool.Default_Block_Size = 0 then
@@ -204,7 +226,7 @@ package body Dynamic_Pools is
 
    not overriding
    function Create_Subpool
-     (Pool : access Dynamic_Pool;
+     (Pool : not null access Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count)
       return not null Subpool_Handle
    is
@@ -235,14 +257,14 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    function Create_Subpool
-     (Pool : access Dynamic_Pool;
+     (Pool : not null access Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count :=
-        Default_Allocation_Block_Size) return Scoped_Subpool_Handle
+        Default_Allocation_Block_Size) return Scoped_Subpool
    is
       New_Subpool : constant Subpool_Handle :=
         Create_Subpool (Pool, Block_Size);
    begin
-      return  Result : Scoped_Subpool_Handle (Handle => New_Subpool);
+      return  Result : Scoped_Subpool (Handle => New_Subpool);
    end Create_Subpool;
 
    --------------------------------------------------------------
@@ -311,12 +333,14 @@ package body Dynamic_Pools is
 
    package body Scoped_Subpools is
       overriding
-      procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle) is
-         Subpool : Subpool_Handle := Scoped_Subpool.Handle;
+      procedure Finalize (Subpool : in out Scoped_Subpool) is
+         Handle : Subpool_Handle := Subpool.Handle;
       begin
-         pragma Warnings (Off, "*Subpool*modified*but*never referenced*");
-         Unchecked_Deallocate_Subpool (Subpool);
-         pragma Warnings (On, "*Subpool*modified*but*never referenced*");
+         --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 95,
+         --  dispatch to Deallocate_Subpool directly.
+         Storage_Pools.Subpools.Pool_Of_Subpool
+           (Handle).Deallocate_Subpool (Handle);
+
       end Finalize;
    end Scoped_Subpools;
 
@@ -411,7 +435,10 @@ package body Dynamic_Pools is
       Subpool.Used_List.Iterate
         (Process => Add_Storage_Count'Access);
 
-      return Result + Subpool.Next_Allocation - 1;
+      Subpool.Free_List.Iterate
+        (Process => Add_Storage_Count'Access);
+
+      return Result + Subpool.Active'Length;
    end Storage_Size;
 
    --------------------------------------------------------------
@@ -430,8 +457,47 @@ package body Dynamic_Pools is
    overriding function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count is
    begin
-      return Pool.Subpools.Storage_Usage;
+      return Pool.Subpools.Storage_Total;
    end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count
+   is
+      Result : Storage_Elements.Storage_Count := 0;
+
+      procedure Add_Storage_Count (Position : Storage_Vector.Cursor) is
+      begin
+         Result := Result + Storage_Vector.Element (Position)'Length;
+      end Add_Storage_Count;
+
+   begin
+      Subpool.Used_List.Iterate
+        (Process => Add_Storage_Count'Access);
+
+      return Result + Subpool.Next_Allocation - 1;
+   end Storage_Used;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count
+   is
+      The_Subpool : constant Dynamic_Subpool_Access :=
+        Dynamic_Subpool (Subpool.all)'Access;
+   begin
+      return Storage_Used (The_Subpool);
+   end Storage_Used;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count is
+   begin
+      return Pool.Subpools.Storage_Usage;
+   end Storage_Used;
 
    --------------------------------------------------------------
 
