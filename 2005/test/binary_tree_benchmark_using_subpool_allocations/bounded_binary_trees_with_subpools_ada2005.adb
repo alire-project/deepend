@@ -121,11 +121,10 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
             declare
                pragma Suppress (Accessibility_Check);
 
-               Short_Lived_Subpool : constant Scoped_Subpool
-                 := Scoped_Subpools.Create_Subpool
-                   (Pool => Trees.Pool'Access,
-                    Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
-                    Heap_Allocated => True);
+               Short_Lived_Subpool : Scoped_Subpool
+                 (Pool => Trees.Pool'Access,
+                  Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+                  Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -211,11 +210,10 @@ begin
 
          pragma Suppress (Accessibility_Check);
 
-         Subpool : constant Scoped_Subpool :=
-           Scoped_Subpools.Create_Subpool
-             (Pool => Trees.Pool'Access,
-              Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
-              Heap_Allocated => True);
+         Subpool : Scoped_Subpool
+           (Pool => Trees.Pool'Access,
+            Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+            Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -233,6 +231,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -253,6 +252,7 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
