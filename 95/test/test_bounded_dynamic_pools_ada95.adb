@@ -110,7 +110,7 @@ is
 
       Put_Line ("Bytes Stored=" &
                   Storage_Elements.Storage_Count'Image
-                  (Bounded_Dynamic_Pools.Storage_Size (Pool)));
+                  (Bounded_Dynamic_Pools.Storage_Used (Pool)));
    end Deallocate_Default_Subpool;
 
    List : Node_Access;
@@ -123,6 +123,9 @@ begin
    New_Line;
    Put_Line ("Initial Bytes Stored=" &
                Storage_Elements.Storage_Count'Image
+               (Bounded_Dynamic_Pools.Storage_Used (Pool))&
+               ", Storage Size=" &
+               Storage_Elements.Storage_Count'Image
                (Bounded_Dynamic_Pools.Storage_Size (Pool)));
 
    Put_Line ("Allocating List Recursively to" &
@@ -133,12 +136,19 @@ begin
 
    List := Recurse (Recursion_Depth);
 
-   Put_Line ("Bytes Stored=" &
+   Put_Line ("Storage Used=" &
+               Storage_Elements.Storage_Count'Image
+               (Bounded_Dynamic_Pools.Storage_Used (Pool)) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image
                (Bounded_Dynamic_Pools.Storage_Size (Pool)));
 
-   Put_Line
-     ("Bytes Stored in Default Subpool=" &
+   Put_Line ("Storage Used in Default Subpool=" &
+               Storage_Elements.Storage_Count'Image
+       (Bounded_Dynamic_Pools.Storage_Used
+          (Subpool =>
+             Bounded_Dynamic_Pools.Default_Subpool_For_Pool (Pool))) &
+               ", Storage Size=" &
         Storage_Elements.Storage_Count'Image
         (Bounded_Dynamic_Pools.Storage_Size
            (Subpool =>
@@ -147,8 +157,8 @@ begin
    Put_Line
      ("Bytes Stored in Other subpools=" &
         Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size (Pool) -
-           Bounded_Dynamic_Pools.Storage_Size
+        (Bounded_Dynamic_Pools.Storage_Used (Pool) -
+           Bounded_Dynamic_Pools.Storage_Used
              (Subpool =>
                   Bounded_Dynamic_Pools.Default_Subpool_For_Pool (Pool))));
 
@@ -173,7 +183,7 @@ begin
 
          Put_Line ("Bytes Stored=" &
                      Storage_Elements.Storage_Count'Image
-                     (Bounded_Dynamic_Pools.Storage_Size (Pool)));
+                     (Bounded_Dynamic_Pools.Storage_Used (Pool)));
 
          Put_Line ("Deallocating Subpool...");
 
@@ -204,13 +214,13 @@ begin
 
          Put_Line ("Bytes Stored Before Finalization=" &
                      Storage_Elements.Storage_Count'Image
-                     (Bounded_Dynamic_Pools.Storage_Size (Pool)));
+                     (Bounded_Dynamic_Pools.Storage_Used (Pool)));
 
       end;
 
       Put_Line ("Bytes Stored After Finalization=" &
                   Storage_Elements.Storage_Count'Image
-                  (Bounded_Dynamic_Pools.Storage_Size (Pool)));
+                  (Bounded_Dynamic_Pools.Storage_Used (Pool)));
    end;
 
    Print (List.all);
@@ -220,7 +230,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size
+        (Bounded_Dynamic_Pools.Storage_Used
            (Subpool =>
               Bounded_Dynamic_Pools.Default_Subpool_For_Pool (Pool))));
 
@@ -236,12 +246,12 @@ begin
 
       Put_Line ("Bytes Stored=" &
                   Storage_Elements.Storage_Count'Image
-                  (Bounded_Dynamic_Pools.Storage_Size (Pool)));
+                  (Bounded_Dynamic_Pools.Storage_Used (Pool)));
 
       Put_Line
         ("Bytes Stored in Default Subpool=" &
            Storage_Elements.Storage_Count'Image
-           (Bounded_Dynamic_Pools.Storage_Size
+           (Bounded_Dynamic_Pools.Storage_Used
               (Subpool =>
                  Bounded_Dynamic_Pools.Default_Subpool_For_Pool (Pool))));
    end;
@@ -254,7 +264,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Size
+        (Bounded_Dynamic_Pools.Storage_Used
            (Subpool =>
               Bounded_Dynamic_Pools.Default_Subpool_For_Pool (Pool))));
 

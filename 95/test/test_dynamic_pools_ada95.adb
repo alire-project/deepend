@@ -102,7 +102,9 @@ is
 
       pragma Warnings (On, "*Default_Subpool*modified*but*never referenced*");
 
-      Put_Line ("Bytes Stored=" &
+      Put_Line ("Storage Used=" &
+                  Storage_Elements.Storage_Count'Image (Storage_Used (Pool)) &
+                  ", Storage Size=" &
                 Storage_Elements.Storage_Count'Image (Storage_Size (Pool)));
    end Deallocate_Default_Subpool;
 
@@ -114,7 +116,9 @@ is
 begin
 
    New_Line;
-   Put_Line ("Initial Bytes Stored=" &
+   Put_Line ("Initial Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Storage_Used (Pool)) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Storage_Size (Pool)));
 
    Put_Line ("Allocating List Recursively to" &
@@ -125,11 +129,16 @@ begin
 
    List := Recurse (Recursion_Depth);
 
-   Put_Line ("Bytes Stored=" &
+   Put_Line ("Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Storage_Used (Pool)) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Storage_Size (Pool)));
 
-   Put_Line
-     ("Bytes Stored in Default Subpool=" &
+   Put_Line ("Storage Used in Default Subpool=" &
+               Storage_Elements.Storage_Count'Image
+       (Dynamic_Pools.Storage_Used
+          (Subpool => Default_Subpool_For_Pool (Pool))) &
+               ", Storage Size=" &
         Storage_Elements.Storage_Count'Image
         (Dynamic_Pools.Storage_Size
            (Subpool => Default_Subpool_For_Pool (Pool))));
@@ -137,7 +146,7 @@ begin
    Put_Line
      ("Bytes Stored in Other subpools=" &
         Storage_Elements.Storage_Count'Image
-        (Storage_Size (Pool) - Dynamic_Pools.Storage_Size
+        (Storage_Used (Pool) - Dynamic_Pools.Storage_Used
            (Subpool => Default_Subpool_For_Pool (Pool))));
 
    begin
@@ -161,7 +170,7 @@ begin
 
          Put_Line ("Bytes Stored=" &
                      Storage_Elements.Storage_Count'Image
-                     (Storage_Size (Pool)));
+                     (Storage_Used (Pool)));
 
          Put_Line ("Deallocating Subpool...");
 
@@ -170,8 +179,33 @@ begin
          pragma Warnings (On, "*Sub_Pool* modified*but*never referenced*");
       end;
 
-      Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Storage_Size (Pool)));
+      declare
+         Sub_Pool : Dynamic_Pools.Scoped_Subpool
+           (Pool => Pool'Access,
+            Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
+      begin
+
+         Put_Line ("Allocating objects to a new scoped subpool");
+
+         for I in 1 .. 10 loop
+            declare
+               Object : constant O_Access
+                 := New_Ordinary_Type (Handle (Sub_Pool));
+               pragma Unreferenced (Object);
+            begin
+               null;
+            end;
+         end loop;
+
+         Put_Line ("Bytes Stored Before Finalization=" &
+                     Storage_Elements.Storage_Count'Image
+                     (Storage_Used (Pool)));
+
+      end;
+
+      Put_Line ("Bytes Stored After Finalization=" &
+                  Storage_Elements.Storage_Count'Image
+                  (Storage_Used (Pool)));
    end;
 
    Print (List.all);
@@ -181,7 +215,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Dynamic_Pools.Storage_Size
+        (Dynamic_Pools.Storage_Used
            (Subpool => Default_Subpool_For_Pool (Pool))));
 
    pragma Warnings (Off, "*Object*is assigned but never read*");
@@ -195,7 +229,7 @@ begin
       end loop;
 
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Storage_Size (Pool)));
+                  Storage_Elements.Storage_Count'Image (Storage_Used (Pool)));
 
       Put_Line
         ("Bytes Stored in Default Subpool=" &
@@ -212,8 +246,23 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Dynamic_Pools.Storage_Size
+        (Dynamic_Pools.Storage_Used
            (Subpool => Default_Subpool_For_Pool (Pool))));
+   Put_Line ("At this point, the nodes and their descriptions still exist,");
+   Put_Line ("because their subpools still exist, however the node names");
+   Put_Line ("shouldn't exist, because the default subpool had been freed.");
+--     Put_Line ("In GNAT this still may print out, probably because the ");
+--     Put_Line ("memory has not been overwritten, but this is dangerous");
+--     Put_Line ("Don't be surprised if you see a storage error exception");
+--
+--     begin
+--        Print (List.all);
+--
+--     exception
+--        when Storage_Error =>
+--           New_Line;
+--           Put_Line ("STORAGE_ERROR was raised, which is not surprising");
+--     end;
 
    New_Line;
    Put_Line ("Successful Completion");
