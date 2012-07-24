@@ -52,6 +52,7 @@ with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Exceptions;          use Ada.Exceptions;
 with System.Storage_Elements; use System.Storage_Elements;
 
 procedure Binary_Trees_With_Subpools_Ada95 is
@@ -131,6 +132,9 @@ procedure Binary_Trees_With_Subpools_Ada95 is
    Results : array (1 .. Depth_Iterations) of Integer;
    Iteration_Tracking : array (1 .. Depth_Iterations) of Positive;
 
+   Failure_Detected : Boolean := False;
+   pragma Atomic (Failure_Detected);
+
    task body Depth_Worker
    is
       Depth         : Natural;
@@ -152,10 +156,9 @@ procedure Binary_Trees_With_Subpools_Ada95 is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : Scoped_Subpool_Handle
-                 (Handle => Create_Subpool
-                   (Pool => Trees.Pool'Access,
-                    Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size));
+               Short_Lived_Subpool : Scoped_Subpool
+                 (Pool => Trees.Pool'Access,
+                  Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -165,13 +168,13 @@ procedure Binary_Trees_With_Subpools_Ada95 is
 
                Short_Lived_Tree_1 :=
                  Trees.Create
-                   (Short_Lived_Subpool.Handle,
+                   (Handle (Short_Lived_Subpool),
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Trees.Create
-                    (Short_Lived_Subpool.Handle,
+                    (Handle (Short_Lived_Subpool),
                      Item  => -I,
                      Depth => Depth);
 
@@ -184,6 +187,11 @@ procedure Binary_Trees_With_Subpools_Ada95 is
 
          Results (Depth_Iter) := Check;
       end loop;
+
+   exception
+      when E : others =>
+         Failure_Detected := True;
+         Put_Line ("Depth Worker Failed: " & Exception_Information (E));
 
    end Depth_Worker;
 
@@ -202,17 +210,16 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : Scoped_Subpool_Handle
-           (Handle => Create_Subpool
-              (Pool => Trees.Pool'Access,
-               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size));
+         Subpool : Scoped_Subpool
+           (Pool => Trees.Pool'Access,
+            Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
 
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
 
          Stretch_Tree : constant Trees.Tree_Node :=
-           Trees.Create (Subpool  => Subpool.Handle,
+           Trees.Create (Subpool  => Handle (Subpool),
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
@@ -222,6 +229,12 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line
+              ("Stretch Depth Task Failed: " & Exception_Information (E));
       end Stretch_Depth_Task;
 
       task Create_Long_Lived_Tree_Task is
@@ -237,6 +250,11 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+
+      exception
+         when E : others =>
+            Failure_Detected := True;
+            Put_Line ("Long Lived Task Failed: " & Exception_Information (E));
       end Create_Long_Lived_Tree_Task;
    begin
       null;
@@ -267,5 +285,11 @@ begin
    Check := Trees.Item_Check (Long_Lived_Tree);
    Put (Item => Check, Width => 0);
    New_Line;
+
+   if Failure_Detected then
+      New_Line;
+      Put_Line ("ERROR: Some Tasks failed");
+      New_Line;
+   end if;
 
 end Binary_Trees_With_Subpools_Ada95;
