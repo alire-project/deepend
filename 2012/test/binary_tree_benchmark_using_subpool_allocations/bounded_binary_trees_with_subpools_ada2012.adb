@@ -241,6 +241,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -261,6 +262,7 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
