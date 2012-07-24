@@ -54,13 +54,16 @@ pragma Restrictions
    No_Implementation_Units);
 
 with Trees.Creation;
+
 with Basic_Bounded_Dynamic_Pools; use Basic_Bounded_Dynamic_Pools;
+
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Task_Identification; use Ada.Task_Identification;
+
 with System.Storage_Elements; use System.Storage_Elements;
 with System.Multiprocessors;
 
@@ -252,6 +255,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -268,6 +272,7 @@ begin
          --  here.
          Set_Owner (Long_Lived_Tree_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
