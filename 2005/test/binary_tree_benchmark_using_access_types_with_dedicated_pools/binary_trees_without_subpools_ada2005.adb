@@ -119,9 +119,8 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
             declare
 
                Short_Lived_Pool : Basic_Dynamic_Pool
-                 (Size =>
-                    2 * (2 ** (Depth + 1)) * Trees.Node_Size,
-                  Heap_Allocated => True);
+                 (Block_Size =>
+                    2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -191,8 +190,7 @@ procedure Binary_Trees_Without_Subpools_Ada2005 is
    end Create_Worker;
 
    Long_Lived_Tree_Pool : Basic_Dynamic_Pool
-     (Size => 2 ** (Max_Depth + 1) * Trees.Node_Size,
-      Heap_Allocated => True);
+     (Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
    --  Since we know how much storage we need, we might as well
    --  specify a block size large enough to hold all the objects
    --  in a single block
@@ -223,8 +221,7 @@ begin
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
          Stretch_Pool : Basic_Dynamic_Pool
-           (Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
-            Heap_Allocated => True);
+           (Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -244,6 +241,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -260,6 +258,7 @@ begin
          --  here.
          Set_Owner (Long_Lived_Tree_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -296,7 +295,7 @@ begin
    Put (Item => Check, Width => 0);
    New_Line;
 
-  if Failure_Detected then
+   if Failure_Detected then
       New_Line;
       Put_Line ("ERROR: Some Tasks failed");
       New_Line;
