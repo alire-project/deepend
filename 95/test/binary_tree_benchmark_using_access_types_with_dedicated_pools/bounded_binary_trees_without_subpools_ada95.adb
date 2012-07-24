@@ -47,17 +47,21 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
+with Trees_Ada95.Creation;
+
 with Basic_Bounded_Dynamic_Pools; use Basic_Bounded_Dynamic_Pools;
-with Trees.Creation;
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Task_Identification; use Ada.Task_Identification;
+
 with System.Storage_Elements; use System.Storage_Elements;
 
 procedure Bounded_Binary_Trees_Without_Subpools_Ada95 is
+
+   package Trees renames Trees_Ada95;
 
    Default_Number_Of_CPUs : constant := 2;
    Default_Depth : constant := 20;
@@ -90,8 +94,45 @@ procedure Bounded_Binary_Trees_Without_Subpools_Ada95 is
 
    Worker_Count     : constant Positive := Get_Worker_Count (Depth_Iterations);
 
-   task type Depth_Worker
-     (Start, Finish : Positive := Positive'Last) is
+   subtype Worker_Id is Positive range 1 .. Worker_Count;
+
+   Iterations_Per_Task : constant Positive :=
+     Depth_Iterations / Worker_Count;
+
+   protected Task_Initializer is
+
+      procedure Get_Bounds (Start_Index : out Positive;
+                            End_Index : out Positive);
+   private
+
+      Next_Start_Index     : Positive := 1;
+      Remainder           : Natural :=
+        Depth_Iterations rem Worker_Count;
+
+   end Task_Initializer;
+
+   protected body Task_Initializer is
+
+      procedure Get_Bounds (Start_Index : out Positive;
+                            End_Index : out Positive) is
+      begin
+
+         Start_Index := Next_Start_Index;
+
+         if Remainder = 0 then
+            End_Index := Start_Index + Iterations_Per_Task - 1;
+         else
+            End_Index := Start_Index + Iterations_Per_Task;
+            Remainder := Remainder - 1;
+         end if;
+
+         Next_Start_Index := End_Index + 1;
+
+      end Get_Bounds;
+
+   end Task_Initializer;
+
+   task type Depth_Worker is
    end Depth_Worker;
 
    Results : array (1 .. Depth_Iterations) of Integer;
@@ -105,7 +146,11 @@ procedure Bounded_Binary_Trees_Without_Subpools_Ada95 is
       Depth         : Natural;
       Check         : Integer;
       Iterations    : Positive;
+
+       Start, Finish : Positive;
    begin
+
+      Task_Initializer.Get_Bounds (Start, Finish);
 
       for Depth_Iter in Start .. Finish loop
 
@@ -162,34 +207,6 @@ procedure Bounded_Binary_Trees_Without_Subpools_Ada95 is
 
    end Depth_Worker;
 
-   subtype Worker_Id is Positive range 1 .. Worker_Count;
-
-   Start_Index     : Positive := 1;
-   End_Index       : Positive := Depth_Iterations;
-
-   Iterations_Per_Task : constant Positive :=
-     Depth_Iterations / Worker_Count;
-
-   Remainder           : Natural :=
-     Depth_Iterations rem Worker_Count;
-
-   function Create_Worker return Depth_Worker is
-   begin
-      if Remainder = 0 then
-         End_Index := Start_Index + Iterations_Per_Task - 1;
-      else
-         End_Index := Start_Index + Iterations_Per_Task;
-         Remainder := Remainder - 1;
-      end if;
-
-      return New_Worker : Depth_Worker
-        (Start => Start_Index,
-         Finish => End_Index)
-      do
-         Start_Index := End_Index + 1;
-      end return;
-   end Create_Worker;
-
    Long_Lived_Tree_Pool : Basic_Dynamic_Pool
      (Size => 2 ** (Max_Depth + 1) * Trees.Node_Size,
       Heap_Allocated => True);
@@ -244,6 +261,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -260,6 +278,7 @@ begin
          --  here.
          Set_Owner (Long_Lived_Tree_Pool);
          Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -271,8 +290,7 @@ begin
 
    --  Now process the trees of different sizes in parallel and collect results
    declare
-      Workers : array (Worker_Id) of Depth_Worker
-        := (others => Create_Worker);
+      Workers : array (Worker_Id) of Depth_Worker;
       pragma Unreferenced (Workers);
    begin
       null;
