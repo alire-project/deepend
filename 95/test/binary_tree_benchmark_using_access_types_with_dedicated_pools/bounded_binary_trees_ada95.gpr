@@ -11,7 +11,7 @@ project Bounded_Binary_Trees_Ada95 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.h.i.l.n.o.s.t.u", "-gnatyaAbcefhikIlnmprStuxBO", "-gnatVn", "-O3", "-gnatn", "-funroll-loops", "-g", "-gnat95", "-gnatp");
+      for Default_Switches ("ada") use ("-gnatf", "-gnatwc.cfjklmp.pr.rtu.w.x.h.i.l.n.o.s.t.u", "-gnatyaAbcefhikIlnmprStuxB", "-gnatVn", "-O3", "-gnatn", "-funroll-loops", "-g", "-gnat95", "-gnatp");
    end Compiler;
 
    package Linker is
