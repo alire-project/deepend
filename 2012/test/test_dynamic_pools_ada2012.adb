@@ -14,8 +14,10 @@ is
 
    Pool : Dynamic_Pools.Dynamic_Pool
      (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
+   pragma Compile_Time_Warning
+     (True, "GNAT Compiler bug, should be able to use default discriminatns");
 
-   --  pragma Default_Storage_Pool (Pool);
+   pragma Default_Storage_Pool (Pool);
 
    subtype Id_String is String (1 .. 10);
    type Id_String_Access is access Id_String;
@@ -146,10 +148,6 @@ is
    type O_Access is access Ordinary_Type;
    for O_Access'Storage_Pool use Pool;
 
-   function New_Ordinary_Type is new Dynamic_Pools.Initialized_Allocation
-     (Ordinary_Type,
-      O_Access);
-
    Recursion_Depth : constant := 10;
 
    use type System.Storage_Elements.Storage_Offset;
@@ -223,10 +221,13 @@ begin
 
    declare
 
-      Sub_Pool : Bounded_Dynamic_Pools.Scoped_Subpool
-        := Bounded_Dynamic_Pools.Scoped_Subpools.Create_Subpool
-          (Pool => Pool,
-           Size    => 400);
+      pragma Suppress (Accessibility_Check);
+
+      Sub_Pool : Dynamic_Pools.Scoped_Subpool
+        := Dynamic_Pools.Create_Subpool (Pool => Pool);
+      Handle : constant Subpool_Handle := Sub_Pool.Handle;
+
+      pragma Unsuppress (Accessibility_Check);
 
       Object : RC_Access;
    begin
@@ -235,24 +236,16 @@ begin
                   "to a subpool declared on the stack");
 
       for I in 1 .. 10 loop
-         Object
-           --  := new (Sub_Pool.Handle) Reference_Counted_Type;
-           := New_Reference_Counted_Type (Sub_Pool.Handle);
-         pragma Compile_Time_Warning (Bounded_Dynamic_Pools.Ada2012_Warnings,
-                                      "GNAT subpool bug");
+         Object := new (Handle) Reference_Counted_Type;
+         pragma Compile_Time_Warning
+           (True,
+            "GNAT subpool bug, should be able to specify Sub_Pool.Handle");
       end loop;
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
-      Put_Line ("Deallocating Subpool...");
-
-      --  Bounded_Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
-
-      Put_Line ("Object Count=" & Natural'Image (Object_Count));
-      Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end;
 
    pragma Warnings (On, "*Object*assigned but never read*");
@@ -289,8 +282,13 @@ begin
       end;
 
       declare
-         Sub_Pool : Dynamic_Pools.Scoped_Subpool_Handle
+         pragma Suppress (Accessibility_Check);
+
+         Sub_Pool : Dynamic_Pools.Scoped_Subpool
            := Dynamic_Pools.Create_Subpool (Pool);
+         Handle : constant Subpool_Handle := Sub_Pool.Handle;
+
+         pragma Unsuppress (Accessibility_Check);
       begin
 
          Put_Line ("Allocating objects to a new scoped subpool");
@@ -298,11 +296,12 @@ begin
          for I in 1 .. 10 loop
             declare
                Object : constant O_Access
-               --  := new (Sub_Pool.Handle) Ordinary_Type'(Value => I);
-                 := New_Ordinary_Type (Sub_Pool.Handle,
-                                       Ordinary_Type'(Value => I));
-               pragma Compile_Time_Warning (Dynamic_Pools.Ada2012_Warnings,
-                                            "GNAT subpool bug");
+                 := new (Handle) Ordinary_Type'(Value => I);
+
+               pragma Compile_Time_Warning
+                 (True,
+                  "GNAT subpool bug, " &
+                    "should be able to specify Sub_Pool.Handle");
 
                pragma Unreferenced (Object);
             begin
