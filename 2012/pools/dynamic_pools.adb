@@ -238,12 +238,12 @@ package body Dynamic_Pools is
    function Create_Subpool
      (Pool : in out Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count :=
-        Default_Allocation_Block_Size) return Scoped_Subpool_Handle
+        Default_Allocation_Block_Size) return Scoped_Subpool
    is
       New_Subpool : constant Subpool_Handle :=
         Create_Subpool (Pool, Block_Size);
    begin
-      return  Result : Scoped_Subpool_Handle (Handle => New_Subpool);
+      return  Result : Scoped_Subpool (Handle => New_Subpool);
    end Create_Subpool;
 
    --------------------------------------------------------------
@@ -325,12 +325,12 @@ package body Dynamic_Pools is
 
    package body Scoped_Subpools is
       overriding
-      procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle) is
-         Subpool : Subpool_Handle := Scoped_Subpool.Handle;
+      procedure Finalize (Subpool : in out Scoped_Subpool) is
+         Handle : Subpool_Handle := Subpool.Handle;
       begin
-         pragma Warnings (Off, "*Subpool*modified*but*never referenced*");
-         Unchecked_Deallocate_Subpool (Subpool);
-         pragma Warnings (On, "*Subpool*modified*but*never referenced*");
+         pragma Warnings (Off, "*Handle*modified*but*never referenced*");
+         Unchecked_Deallocate_Subpool (Handle);
+         pragma Warnings (On, "*Handle*modified*but*never referenced*");
       end Finalize;
    end Scoped_Subpools;
 
@@ -413,7 +413,7 @@ package body Dynamic_Pools is
       end loop;
 
       for E in Subpool.Free_List.Iterate loop
-         Result := Result + Subpool.Used_List (E).all'Length;
+         Result := Result + Subpool.Free_List (E).all'Length;
       end loop;
 
       return Result + Subpool.Active'Length;

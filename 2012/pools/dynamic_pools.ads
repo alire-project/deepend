@@ -129,18 +129,18 @@ package Dynamic_Pools is
       --  Create_Subpool call returning this type will be used to place an
       --  object in a nested scope.
 
-      type Scoped_Subpool_Handle (Handle : Subpool_Handle) is new
+      type Scoped_Subpool (Handle : Subpool_Handle) is new
         Ada.Finalization.Limited_Controlled with null record;
        --  Calls Unchecked_Deallocate_Subpool during finalization
 
    private
 
       overriding
-       procedure Finalize (Scoped_Subpool : in out Scoped_Subpool_Handle);
+       procedure Finalize (Subpool : in out Scoped_Subpool);
 
    end Scoped_Subpools;
 
-   subtype Scoped_Subpool_Handle is Scoped_Subpools.Scoped_Subpool_Handle;
+   subtype Scoped_Subpool is Scoped_Subpools.Scoped_Subpool;
 
    Default_Allocation_Block_Size : constant := 16#FFFF#;
    --  A Block Size is the size of the heap allocation used when more
@@ -178,8 +178,10 @@ package Dynamic_Pools is
    function Create_Subpool
      (Pool : in out Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count :=
-        Default_Allocation_Block_Size) return Scoped_Subpool_Handle;
+        Default_Allocation_Block_Size) return Scoped_Subpool;
    --  The task calling Create_Subpool initially "owns" the subpool.
+   --  NOTE: You will likely need to suppress Accessibility_Checks in
+   --  order to successfully call this subprogram.
 
    overriding function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
