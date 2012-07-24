@@ -101,7 +101,9 @@ is
 
       pragma Warnings (On, "*Default_Subpool*modified*but*never referenced*");
 
-      Put_Line ("Bytes Stored=" &
+      Put_Line ("Storage Used=" &
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
+                  ", Storage Size=" &
                 Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
    end Deallocate_Default_Subpool;
 
@@ -113,7 +115,9 @@ is
 begin
 
    New_Line;
-   Put_Line ("Initial Bytes Stored=" &
+   Put_Line ("Initial Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
 
    Put_Line ("Allocating List Recursively to" &
@@ -124,11 +128,16 @@ begin
 
    List := Recurse (Recursion_Depth);
 
-   Put_Line ("Bytes Stored=" &
+   Put_Line ("Storage Used=" &
+               Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
+               ", Storage Size=" &
                Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
 
-   Put_Line
-     ("Bytes Stored in Default Subpool=" &
+   Put_Line ("Storage Used in Default Subpool=" &
+               Storage_Elements.Storage_Count'Image
+       (Dynamic_Pools.Storage_Used
+          (Subpool => Pool.Default_Subpool_For_Pool)) &
+               ", Storage Size=" &
         Storage_Elements.Storage_Count'Image
         (Dynamic_Pools.Storage_Size
            (Subpool => Pool.Default_Subpool_For_Pool)));
@@ -136,7 +145,7 @@ begin
    Put_Line
      ("Bytes Stored in Other subpools=" &
         Storage_Elements.Storage_Count'Image
-        (Pool.Storage_Size - Dynamic_Pools.Storage_Size
+        (Pool.Storage_Used - Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    begin
@@ -159,7 +168,7 @@ begin
          end loop;
 
          Put_Line ("Bytes Stored=" &
-                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
          Put_Line ("Deallocating Subpool...");
 
@@ -169,7 +178,7 @@ begin
       end;
 
       declare
-         Sub_Pool : Dynamic_Pools.Scoped_Subpool_Handle
+         Sub_Pool : Dynamic_Pools.Scoped_Subpool
            := Dynamic_Pools.Create_Subpool (Pool'Access);
       begin
 
@@ -186,12 +195,12 @@ begin
          end loop;
 
          Put_Line ("Bytes Stored Before Finalization=" &
-                     Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                     Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
       end;
 
       Put_Line ("Bytes Stored After Finalization=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
    end;
 
    Print (List.all);
@@ -201,7 +210,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Dynamic_Pools.Storage_Size
+        (Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    pragma Warnings (Off, "*Object*is assigned but never read*");
@@ -215,12 +224,12 @@ begin
       end loop;
 
       Put_Line ("Bytes Stored=" &
-                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Used));
 
       Put_Line
         ("Bytes Stored in Default Subpool=" &
            Storage_Elements.Storage_Count'Image
-           (Dynamic_Pools.Storage_Size
+           (Dynamic_Pools.Storage_Used
               (Subpool => Pool.Default_Subpool_For_Pool)));
    end;
    pragma Warnings (On, "*Object*is assigned but never read*");
@@ -232,7 +241,7 @@ begin
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
-        (Dynamic_Pools.Storage_Size
+        (Dynamic_Pools.Storage_Used
            (Subpool => Pool.Default_Subpool_For_Pool)));
 
    Put_Line ("At this point, the nodes and their descriptions still exist,");
