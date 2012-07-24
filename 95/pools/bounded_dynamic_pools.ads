@@ -147,11 +147,21 @@ package Bounded_Dynamic_Pools is
    function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of memory allocated from the pool
+   --  and its subpools, including storage that is allocated but not used.
+
+   function Storage_Size
+     (Subpool : Subpool_Handle) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the
+   --  subpool, including storage that is allocated but not used.
+
+   function Storage_Used
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of memory allocated from the pool
    --  and its subpools. It assumes all currently filled blocks are fully
    --  allocated, but returns the exact amount for the current active block
    --  for each subpool.
 
-   function Storage_Size
+   function Storage_Used
      (Subpool : Subpool_Handle) return Storage_Elements.Storage_Count;
    --  Indicates the current approximate amount of memory allocated from the
    --  subpool. It assumes all currently filled blocks are fully allocated,
@@ -204,11 +214,10 @@ package Bounded_Dynamic_Pools is
      (Pool : access Dynamic_Pool;
       Size : Storage_Elements.Storage_Count;
       Heap_Allocated : Boolean) is tagged limited private;
-   --  Scoped subpools define a controlled object that wraps a subpool
-   --  handle, that automatically deallocates the subpool when the
-   --  Scoped_Subpool_Handle object is finalized. Typically, the
-   --  Create_Subpool call returning this type will be used to place an
-   --  object in a nested scope.
+   --  A Scoped subpool is a controlled type that manages its own internal
+   --  subpool_handle that automatically deallocates the associated subpool
+   --  when the Scoped_Subpool object is finalized. Typically, an object of
+   --  this type is placed in a nested scope.
 
    function Handle
      (Subpool : Scoped_Subpool) return Subpool_Handle;
@@ -235,6 +244,7 @@ private
       procedure Add (Subpool : Dynamic_Subpool_Access);
       procedure Delete (Subpool : Dynamic_Subpool_Access);
       procedure Deallocate_All;
+      function Storage_Total return Storage_Elements.Storage_Count;
       function Storage_Usage return Storage_Elements.Storage_Count;
 
    private
@@ -261,7 +271,7 @@ private
       Size : Storage_Elements.Storage_Count;
       Heap_Allocated : Boolean) is new Finalization.Limited_Controlled with
       record
-         Subpool : Subpool_Handle;
+         Handle : Subpool_Handle;
 
          case Heap_Allocated is
             when True =>

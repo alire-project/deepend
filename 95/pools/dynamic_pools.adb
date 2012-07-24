@@ -66,6 +66,10 @@ package body Dynamic_Pools is
      (Subpool : Dynamic_Subpool_Access)
       return Storage_Elements.Storage_Count;
 
+   function Storage_Used
+     (Subpool : Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count;
+
    protected body Subpool_Set is
 
       procedure Add (Subpool : Dynamic_Subpool_Access) is
@@ -127,12 +131,25 @@ package body Dynamic_Pools is
       end Initialize;
       --------------------------------------------------------------
 
+      function Storage_Total return Storage_Elements.Storage_Count
+      is
+         Result : Storage_Elements.Storage_Count := 0;
+
+      begin
+         for I in 1 .. Subpools.Last loop
+            Result := Result + Storage_Size (Subpools.Subpool_List (I));
+         end loop;
+         return Result;
+      end Storage_Total;
+
+      --------------------------------------------------------------
+
       function Storage_Usage return Storage_Elements.Storage_Count
       is
          Result : Storage_Elements.Storage_Count := 0;
       begin
          for I in 1 .. Subpools.Last loop
-            Result := Result + Storage_Size (Subpools.Subpool_List (I));
+            Result := Result + Storage_Used (Subpools.Subpool_List (I));
          end loop;
 
          return Result;
@@ -390,7 +407,7 @@ package body Dynamic_Pools is
 
    procedure Finalize (Subpool : in out Scoped_Subpool) is
    begin
-     --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
+      --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
       --  dispatch to Deallocate_Subpool directly.
       Deallocate_Subpool
         (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool
@@ -501,8 +518,11 @@ package body Dynamic_Pools is
       for I in 1 .. Subpool.Used_List.Last loop
          Result := Result + Subpool.Used_List.Storage (I)'Length;
       end loop;
+      for I in 1 .. Subpool.Free_List.Last loop
+         Result := Result + Subpool.Free_List.Storage (I)'Length;
+      end loop;
 
-      return Result + Subpool.Next_Allocation - 1;
+      return Result + Subpool.Active'Length;
    end Storage_Size;
 
    --------------------------------------------------------------
@@ -521,8 +541,43 @@ package body Dynamic_Pools is
    function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count is
    begin
-      return Pool.Subpools.Storage_Usage;
+      return Pool.Subpools.Storage_Total;
    end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count
+   is
+      Result : Storage_Elements.Storage_Count := 0;
+
+   begin
+      for I in 1 .. Subpool.Used_List.Last loop
+         Result := Result + Subpool.Used_List.Storage (I)'Length;
+      end loop;
+
+      return Result + Subpool.Next_Allocation - 1;
+   end Storage_Used;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Subpool : Subpool_Handle) return Storage_Elements.Storage_Count
+   is
+      The_Subpool : constant Dynamic_Subpool_Access :=
+        Dynamic_Subpool (Subpool.all)'Access;
+   begin
+      return Storage_Used (The_Subpool);
+   end Storage_Used;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count is
+   begin
+      return Pool.Subpools.Storage_Usage;
+   end Storage_Used;
 
    --------------------------------------------------------------
 

@@ -151,9 +151,7 @@ package body Basic_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   procedure Initialize (Pool : in out Basic_Dynamic_Pool)
-   is
-      use type System.Storage_Elements.Storage_Count;
+   procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
    begin
       Pool.Active := new System.Storage_Elements.Storage_Array
         (1 .. Pool.Block_Size);
@@ -218,8 +216,28 @@ package body Basic_Dynamic_Pools is
       for I in 1 .. Pool.Used_List.Last loop
          Result := Result + Pool.Used_List.Storage.all'Length;
       end loop;
+      for I in 1 .. Pool.Free_List.Last loop
+         Result := Result + Pool.Free_List.Storage.all'Length;
+      end loop;
+
+      return Result + Pool.Active'Length;
+   end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Basic_Dynamic_Pool)
+      return Storage_Elements.Storage_Count
+   is
+      Result : Storage_Elements.Storage_Count := 0;
+
+      use type Storage_Elements.Storage_Count;
+   begin
+      for I in 1 .. Pool.Used_List.Last loop
+         Result := Result + Pool.Used_List.Storage.all'Length;
+      end loop;
 
       return Result + Pool.Next_Allocation - 1;
-   end Storage_Size;
+   end Storage_Used;
 
 end Basic_Dynamic_Pools;
