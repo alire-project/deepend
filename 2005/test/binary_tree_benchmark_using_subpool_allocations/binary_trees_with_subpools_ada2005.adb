@@ -117,7 +117,7 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : constant Scoped_Subpool_Handle
+               Short_Lived_Subpool : constant Scoped_Subpool
                  := Create_Subpool
                    (Pool => Trees.Pool'Access,
                     Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
@@ -183,6 +183,7 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
       do
          Start_Index := End_Index + 1;
       end return;
+
    end Create_Worker;
 
    Long_Lived_Tree      : Trees.Tree_Node;
@@ -200,7 +201,7 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : constant Scoped_Subpool_Handle :=
+         Subpool : constant Scoped_Subpool :=
            Create_Subpool
              (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
@@ -219,6 +220,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -239,6 +241,7 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
