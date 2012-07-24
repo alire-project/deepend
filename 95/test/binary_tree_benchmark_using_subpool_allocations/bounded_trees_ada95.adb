@@ -7,7 +7,7 @@
 --
 --  Contributed by Brad Moore
 
-package body Bounded_Trees_Ada2005 is
+package body Bounded_Trees_Ada95 is
 
    function New_Node is new
      Allocation
@@ -50,4 +50,4 @@ package body Bounded_Trees_Ada2005 is
          return Item.Value + Item_Check (Item.Left) - Item_Check (Item.Right);
       end if;
    end Item_Check;
-end Bounded_Trees_Ada2005;
+end Bounded_Trees_Ada95;

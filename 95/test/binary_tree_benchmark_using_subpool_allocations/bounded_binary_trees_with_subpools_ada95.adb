@@ -57,7 +57,7 @@ with System.Storage_Elements; use System.Storage_Elements;
 
 procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
-   package Trees renames Bounded_Trees_Ada2005;
+   package Trees renames Bounded_Trees_Ada95;
 
    pragma Default_Storage_Pool (Trees.Pool);
 
@@ -92,8 +92,45 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
    Worker_Count     : constant Positive := Get_Worker_Count (Depth_Iterations);
 
-   task type Depth_Worker
-     (Start, Finish : Positive := Positive'Last) is
+   subtype Worker_Id is Positive range 1 .. Worker_Count;
+
+   Iterations_Per_Task : constant Positive :=
+     Depth_Iterations / Worker_Count;
+
+   protected Task_Initializer is
+
+      procedure Get_Bounds (Start_Index : out Positive;
+                            End_Index : out Positive);
+   private
+
+      Next_Start_Index     : Positive := 1;
+      Remainder           : Natural :=
+        Depth_Iterations rem Worker_Count;
+
+   end Task_Initializer;
+
+   protected body Task_Initializer is
+
+      procedure Get_Bounds (Start_Index : out Positive;
+                            End_Index : out Positive) is
+      begin
+
+         Start_Index := Next_Start_Index;
+
+         if Remainder = 0 then
+            End_Index := Start_Index + Iterations_Per_Task - 1;
+         else
+            End_Index := Start_Index + Iterations_Per_Task;
+            Remainder := Remainder - 1;
+         end if;
+
+         Next_Start_Index := End_Index + 1;
+
+      end Get_Bounds;
+
+   end Task_Initializer;
+
+   task type Depth_Worker is
    end Depth_Worker;
 
    Results : array (1 .. Depth_Iterations) of Integer;
@@ -107,7 +144,11 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
       Depth         : Natural;
       Check         : Integer;
       Iterations    : Positive;
+
+      Start, Finish : Positive;
    begin
+
+      Task_Initializer.Get_Bounds (Start, Finish);
 
       for Depth_Iter in Start .. Finish loop
 
@@ -119,31 +160,26 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
          for I in 1 .. Iterations loop
             declare
-               pragma Suppress (Accessibility_Check);
-
-               Short_Lived_Subpool : constant Scoped_Subpool
-                 := Scoped_Subpools.Create_Subpool
-                   (Pool => Trees.Pool'Access,
-                    Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
-                    Heap_Allocated => True);
+               Short_Lived_Subpool : Scoped_Subpool
+                 (Pool => Trees.Pool'Access,
+                  Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+                  Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
-
-               pragma Unsuppress (Accessibility_Check);
 
                Short_Lived_Tree_1, Short_Lived_Tree_2 : Trees.Tree_Node;
             begin
 
                Short_Lived_Tree_1 :=
                  Trees.Create
-                   (Short_Lived_Subpool.Handle,
+                   (Handle (Short_Lived_Subpool),
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Trees.Create
-                    (Short_Lived_Subpool.Handle,
+                    (Handle (Short_Lived_Subpool),
                      Item  => -I,
                      Depth => Depth);
 
@@ -164,36 +200,6 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
    end Depth_Worker;
 
-   subtype Worker_Id is Positive range 1 .. Worker_Count;
-
-   Start_Index         : Positive := 1;
-   End_Index           : Positive := Depth_Iterations;
-
-   Iterations_Per_Task : constant Positive :=
-     Depth_Iterations / Worker_Count;
-
-   Remainder           : Natural :=
-     Depth_Iterations rem Worker_Count;
-
-   function Create_Worker return Depth_Worker
-   is
-      pragma Suppress (Accessibility_Check);
-   begin
-      if Remainder = 0 then
-         End_Index := Start_Index + Iterations_Per_Task - 1;
-      else
-         End_Index := Start_Index + Iterations_Per_Task;
-         Remainder := Remainder - 1;
-      end if;
-
-      return New_Worker : Depth_Worker
-        (Start => Start_Index,
-         Finish => End_Index)
-      do
-         Start_Index := End_Index + 1;
-      end return;
-   end Create_Worker;
-
    Long_Lived_Tree      : Trees.Tree_Node;
 
    Check : Integer;
@@ -209,21 +215,16 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         pragma Suppress (Accessibility_Check);
-
-         Subpool : constant Scoped_Subpool :=
-           Scoped_Subpools.Create_Subpool
-             (Pool => Trees.Pool'Access,
-              Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
-              Heap_Allocated => True);
+         Subpool : Scoped_Subpool
+           (Pool => Trees.Pool'Access,
+            Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+            Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
 
-         pragma Unsuppress (Accessibility_Check);
-
          Stretch_Tree : constant Trees.Tree_Node :=
-           Trees.Create (Subpool  => Subpool.Handle,
+           Trees.Create (Subpool  => Handle (Subpool),
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
@@ -233,6 +234,7 @@ begin
          Put (HT & " check: ");
          Put (Item => Check, Width => 1);
          New_Line;
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -253,6 +255,7 @@ begin
          --  in a single block
       begin
          Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+
       exception
          when E : others =>
             Failure_Detected := True;
@@ -264,10 +267,8 @@ begin
 
    --  Now process the trees of different sizes in parallel and collect results
    declare
-      pragma Suppress (Accessibility_Check);
 
-      Workers : array (Worker_Id) of Depth_Worker
-        := (others => Create_Worker);
+      Workers : array (Worker_Id) of Depth_Worker;
       pragma Unreferenced (Workers);
    begin
       null;
