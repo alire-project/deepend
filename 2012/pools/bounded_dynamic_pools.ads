@@ -281,8 +281,8 @@ private
 
       procedure Add (Subpool : Dynamic_Subpool_Access);
       procedure Delete (Subpool : Dynamic_Subpool_Access);
-      function Storage_Usage return Storage_Elements.Storage_Count;
       function Storage_Total return Storage_Elements.Storage_Count;
+      function Storage_Usage return Storage_Elements.Storage_Count;
       function Get_Subpools_For_Finalization  return Subpool_Vector.Vector;
 
    private
@@ -308,7 +308,7 @@ private
      (Size : Storage_Elements.Storage_Count;
       Heap_Allocated : Boolean) is new Finalization.Limited_Controlled with
       record
-         Subpool : aliased Subpool_Handle;
+         Subpool : Subpool_Handle;
 
          case Heap_Allocated is
             when True =>

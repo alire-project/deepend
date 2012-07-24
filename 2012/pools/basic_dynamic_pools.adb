@@ -134,7 +134,27 @@ package body Basic_Dynamic_Pools is
          Result := Result + Pool.Used_List (E).all'Length;
       end loop;
 
-      return Result + Pool.Next_Allocation - 1;
+      for E in Pool.Free_List.Iterate loop
+         Result := Result + Pool.Free_List (E).all'Length;
+      end loop;
+
+      return Result + Pool.Active'Length;
    end Storage_Size;
+
+   --------------------------------------------------------------
+
+   function Storage_Used
+     (Pool : Basic_Dynamic_Pool)
+      return Storage_Elements.Storage_Count
+   is
+      Result : Storage_Elements.Storage_Count := 0;
+   begin
+
+      for E in Pool.Used_List.Iterate loop
+         Result := Result + Pool.Used_List (E).all'Length;
+      end loop;
+
+      return Result + Pool.Next_Allocation - 1;
+   end Storage_Used;
 
 end Basic_Dynamic_Pools;

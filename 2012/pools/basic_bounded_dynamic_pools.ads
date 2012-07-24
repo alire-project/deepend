@@ -83,9 +83,15 @@ package Basic_Bounded_Dynamic_Pools is
 
    overriding function Storage_Size
      (Pool : Basic_Dynamic_Pool) return Storage_Elements.Storage_Count;
+   --  Indicates the current amount of storage allocated to the pool,
+   --  including storage that is allocated but not used.
+
+   function Storage_Used
+     (Pool : Basic_Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of memory allocated from the pool.
    --  It assumes all currently filled blocks are fully allocated, but
-   --  returns the exact amount for the current active block.
+   --  returns the exact amount for the current active block for the
+   --  pool.
 
    function Is_Owner
      (Pool : Basic_Dynamic_Pool;
