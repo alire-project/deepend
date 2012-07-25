@@ -63,6 +63,8 @@ package body Basic_Dynamic_Pools is
       use type Storage_Elements.Storage_Count;
    begin
 
+      pragma Assert (Is_Owner (Pool, Current_Task));
+
       --  If there's not enough space in the current hunk of memory
       if Size_In_Storage_Elements >
         Pool.Active'Length - Pool.Next_Allocation then

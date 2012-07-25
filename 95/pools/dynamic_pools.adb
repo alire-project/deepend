@@ -393,7 +393,7 @@ package body Dynamic_Pools is
 
    procedure Initialize (Subpool : in out Scoped_Subpool) is
    begin
-      Subpool.Subpool := Create_Subpool (Subpool.Pool);
+      Subpool.Handle := Create_Subpool (Subpool.Pool);
    end Initialize;
 
    --------------------------------------------------------------
@@ -411,8 +411,8 @@ package body Dynamic_Pools is
       --  dispatch to Deallocate_Subpool directly.
       Deallocate_Subpool
         (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool
-         (Subpool.Subpool).all),
-         Subpool.Subpool);
+         (Subpool.Handle).all),
+         Subpool.Handle);
    end Finalize;
 
    --------------------------------------------------------------
@@ -420,7 +420,7 @@ package body Dynamic_Pools is
    function Handle
      (Subpool : Scoped_Subpool) return Subpool_Handle is
    begin
-      return Subpool.Subpool;
+      return Subpool.Handle;
    end Handle;
 
    --------------------------------------------------------------
