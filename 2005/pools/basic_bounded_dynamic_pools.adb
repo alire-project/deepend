@@ -46,6 +46,7 @@ package body Basic_Bounded_Dynamic_Pools is
    is
       pragma Unreferenced (Alignment);
    begin
+      pragma Assert (Is_Owner (Pool, Current_Task));
 
       if Pool.Heap_Allocated then
 

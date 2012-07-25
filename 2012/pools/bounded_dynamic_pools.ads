@@ -1,8 +1,8 @@
 ------------------------------------------------------------------------------
 --
---              Deepend - Dynamic Pools for Ada 2005 and Ada 2012
+--     Deepend - Dynamic Storage Pools for Ada 95, Ada 2005 and Ada 2012
 --
---                        D Y N A M I C   P O O L S
+--                 B O U N D E D   D Y N A M I C   P O O L S
 --
 --                                S p e c
 --
@@ -27,54 +27,82 @@
 --  executable file might be covered by the GNU Public License.
 ------------------------------------------------------------------------------
 
---  Deepend provides storage pools with subpool capabilities for Ada 2005
---  and Ada 2012. Subpools provide an efficient mechanism to release
---  storage that is considered to be safer and more efficient than
---  other strategies such as garbage collection. In Ada 2012, the new
---  allocation syntax may be used with this pool, to specify the subpool that
---  will contain the allocated objects.
+--  Deepend provides storage pools with subpool capabilities for Ada95,
+--  Ada 2005, and Ada 2012. Subpools provide an efficient mechanism to
+--  release storage that is considered to be safer and more efficient than
+--  other strategies such as garbage collection.
+--
+--  There are 4 Storage Pool packages to choose from in Deepend.
+--
+--     1) Dynamic_Pools
+--     2) Bounded_Dynamic_Pools
+--     3) Basic_Dynamic_Pools
+--     4) Basic_Bounded_Dynamic_Pools
+--
+--  The Dynamic_Pools package has subpool capabilities where the storage
+--  in each Subpool object is unbounded. If the current block of memory
+--  is fully allocated to objects, and further objects are allocated,
+--  then another block of storage is allocated to the subpool, and further
+--  allocations to that subpool are carved out of that new storage block.
+--
+--  The Bounded_Dynamic_Pools package has subpool capabilities where the
+--  storage in each Subpool object is bounded. If the Subpool is fully
+--  allocated with objects, and an attempt is made to allocate further objects
+--  from the same subpool, then a Storage_Error exception is raised.
+--
+--  The Basic_Dynamic_Pool package does not have subpool capabilities, and
+--  each allocation is managed instead by the pool object.
+--  A Basic_Dynamic_Pool is an unbounded pool such that if the current block
+--  of storage is fully allocated with objects, and further objects are
+--  allocated, then another block of memory is allocated to the pool, and
+--  further object allocations are carved out of that new block,
+
+--  The Basic_Bounded_Dynamic_Pool package does not have subpool capabilities,
+--  and each allocation is managed instead by the pool object.
+--  A Basic_Dynamic_Pool is a bounded pool such that if the pool's storage has
+--  been fully allocated with objects, and an attemp is made to allocate
+--  further objects, then a Storage_Error exception is raised.
+
+--  In Ada 2012, the new allocation syntax may be used with this pool, to
+--  specify the subpool that will contain the allocated objects.
 --
 --     e.g.
 --          Object := new (subpool_name) Object_Type'(Value);
 --
---  For Ada 2005, the same effect can be obtained by using the Allocation
---  and Initialized_Allocation generics provided by this package. These
---  generics allow allocating non-controlled objects of definite types to a
---  particular subpool.
---  In addition, for both Ada 2005 and Ada 2012, the new operator may be used
---  without specifying a subpool, which results in an object being allocated
---  to the default subpool for the storage pool.
+--  For Ada 95 and Ada 2005, the same effect can be obtained by using the
+--  Allocation and Initialized_Allocation generics provided by this package.
+--  However, these generics only allow allocating non-controlled objects of
+--  definite types to a particular subpool, whereas in Ada 2012, indefinate
+--  types and controlled types, and other types needing finalization such as
+--  protected types may also be allocated to a subpool. Only task types or type
+--  that have tasks cannot be allocated to a subpool.
 --
---  A Dynamic_Pool allows objects allocated from the pool to be reclaimed
+--  In addition, for Ada 95, Ada 2005, and Ada 2012, the "new" keyword may be
+--  used without specifying a subpool, which results in an object being
+--  allocated to the default subpool for the storage pool.
+--
+--  A Dynamic_Pool allows objects allocated from a subpool to be reclaimed
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
 --  with this storage pool.
 --
 --  Tasks can create subpools from the same Dynamic Pool object at the
---  same time, but only one task may allocate from a specific subpool
+--  same time, but only one task may allocate objects from a specific subpool
 --  instance at a time. A task "owns" its subpools, and attempts by other
 --  tasks to allocate from subpool owned by another task results in
 --  a Program_Error exception being raised.
 --
---  There is both an Ada 2005 version of the packages and an Ada 2012 version.
---  The Ada 2005 version was designed to be compatible with the Ada 2012
---  version as much as possible, although the Ada 2012 version does take
---  advantage of the new features of the language, including the new subpool
---  facility provided by System.Storage_Pools.Subpools.
---
---  Also, the 2012 version eliminates access parameters in favor of in out
---  parameters for function calls, and allows defaults for discriminated types.
---  The Ada 2005 version of the Dynamic_Pools package does not support
---  allocations of unconstrained types, or objects that need finalization such
---  as controlled types, or protected types, although there is a Deepend
---  package, Basic_Dynamic_Pools, that does provide these capabilities in
---  Ada 2005, though that package does not provide subpool capabilities.
---
---  The Ada 2012 Dynamic_Pools package provides both subpool capabilities and
---  the ability to allocate controlled types and unconstrained types.
---  Calling Unchecked_Deallocate_Subpool will finalize these objects and
---  release any other storage associated with the subpool.
+--  There are separate versions of these packages for Ada95, Ada 2005, and
+--  Ada 2012. The three versions were designed to have mostly compatible
+--  interfaces, but there are slight differences in each newer language
+--  version that takes advantages of newer language features.
+--  In particular,
+--    - for Ada 2005, the Scoped_Subpool type has a Create_Subpool constructor,
+--      which allows the Block_Size to have a defaulted value.
+--    - for Ada 2012, Pool parameters are in out parameters, rather than
+--      access parameters, which eliminates the need to declare the pool
+--      object as an aliased object.
 --
 --
 --  Allocation strategy:
@@ -85,6 +113,10 @@
 --
 --    The strategy is to provide an efficient storage pool that allocates
 --    objects quickly with minimal overhead, and very fast dealloction.
+--    Tasks "own" its subpool objects, which allows allocation from the
+--    subpools to be more efficient, since there is no need for task
+--    synchronization.
+--
 --    The intent is that the subpool strategy should generally outperform
 --    other strategies such as garbage collection, or individual object
 --    reclamation in a more deterministic fashion.
@@ -105,8 +137,8 @@ with System.Storage_Elements; use System;
 with System.Storage_Pools.Subpools;
 
 with Ada.Containers;
-private with Ada.Finalization;
 
+private with Ada.Finalization;
 private with Ada.Containers.Bounded_Vectors;
 
 package Bounded_Dynamic_Pools is
@@ -181,26 +213,27 @@ package Bounded_Dynamic_Pools is
 
    overriding function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
-   --  Indicates the current amount of memory allocated from the pool
+   --  Indicates the current amount of storage allocated from the pool
    --  and its subpools, including storage that is allocated but not used.
 
    function Storage_Size
      (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
-   --  Indicates the current amount of memory allocated from the
+   --  Indicates the current amount of storage allocated from the
    --  subpool, including storage that is allocated but not used.
 
    function Storage_Used
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
-   --  Indicates the current amount of memory allocated from the pool
-   --  and its subpools. It assumes all currently filled blocks are fully
+   --  Indicates the current amount of storage allocated to objects from the
+   --  pool and its subpools. It assumes all currently filled blocks are fully
    --  allocated, but returns the exact amount for the current active block
    --  for each subpool.
 
    function Storage_Used
      (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count;
-   --  Indicates the current approximate amount of memory allocated from the
-   --  subpool. It assumes all currently filled blocks are fully allocated,
-   --  but returns the exact amount for the current active block.
+   --  Indicates the current approximate amount of storage allocated to
+   --  objects from the subpool. It assumes all currently filled blocks are
+   --  fully allocated, but returns the exact amount for the current active
+   --  block.
 
    function Is_Owner
      (Subpool : not null Subpool_Handle;
@@ -230,7 +263,8 @@ package Bounded_Dynamic_Pools is
      (Pool : Dynamic_Pool) return not null Subpool_Handle;
    --  This calls returns the default subpool for the pool. It raises
    --  Storage_Error if Pool.Default_Block_Size is zero. The default
-   --  subpool is used when Ada's "new" operator is used.
+   --  subpool is used when Ada's "new" operator is used without specifying
+   --  a subpool handle.
 
    generic
       type Allocation_Type is private;

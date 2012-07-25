@@ -2,7 +2,7 @@
 --
 --              Deepend - Dynamic Pools for Ada 2005 and Ada 2012
 --
---                        D Y N A M I C   P O O L S
+--                 B O U N D E D   D Y N A M I C   P O O L S
 --
 --                                B o d y
 --
