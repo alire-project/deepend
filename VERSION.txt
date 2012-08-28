@@ -1,6 +1,34 @@
 Deepend Version History.
 
-deepend-3.1 (Current Version) 
+deepend-3.2 (Current Version)
+- Ada 95 versions added
+- Added Bounded forms for all the storage pool types.
+- Added exception handling, and allowed scoped subpools to not be
+  allocated from the heap.
+- Storage_Size call fixed to match description in the Standard. It is
+  supposed to return the size of all storage allocated, including free
+  storage and used storage. Previously, Deepend was reporting the 
+  amount of used storage. Instead, a new call, Storage_Used exists,
+  which now reports the amount of used storage.
+- Scoped subpools are no longer created by the Create_Subpool call.
+  Instead they are just declared with appropriate discriminants.
+- Fix bug with deallocation subpools, which needed to call the base
+  class, but then ensure not calling back into the protected object,
+  which caused hanging.
+- Added accessibility check suppressions for Ada 2012 test code.
+- Split source into three folders for Ada 95, Ada 2005, and Ada 2012
+- Removed assertions that the size of the allocation had to be <=
+  the size of the block size. This restriction was unnecessary, as the
+  code will allocate a larger block if necessary to accommodate the
+  request
+- Added portability restrictions to Ada 2012 version of the code
+- Removed non-portable use of System.Task_Info package
+- Moved pragma Precondition and Postcondition for Ada 2005 version to
+  body as portable assertions.
+- Removed compile time warnings that were incorrect or no longer needed. 
+- Updated ICC compiler build instructions
+
+deepend-3.1
 - Can now deallocate the default subpool, then continue to allocate
   from the default subpool.
 - Took advantage of new Ada 2012 features including;
