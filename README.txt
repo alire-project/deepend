@@ -47,7 +47,7 @@ commands
 
   mkdir sandbox
   cd sandbox
-  git clone git://git.code.sf.net/p/deepend/code mount-dir
+  git clone git://git.code.sf.net/p/deepend/code deepend-src
 
 The current development version typically will correspond to the latest
 stable release, but may at times be unstable when new features are being
