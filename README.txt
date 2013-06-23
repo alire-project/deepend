@@ -34,7 +34,26 @@ See the individual source files for details.
 Any comments on the generics would be greatly appreciated.
 Please send comments to brad.moore@shaw.ca
 
-2.0 DEEPEND Storage Pool Classes
+2.0 DOWNLOADING
+===============
+
+The latest stable release and older releases may be downloaded from;
+
+https://sourceforge.net/projects/deepend/files/
+
+For those who want the current development versions of the source they
+can download using git (http://git-scm.com/) by issuing the following
+commands
+
+  mkdir sandbox
+  cd sandbox
+  git clone git://git.code.sf.net/p/deepend/code mount-dir
+
+The current development version typically will correspond to the latest
+stable release, but may at times be unstable when new features are being
+worked on.
+
+3.0 DEEPEND Storage Pool Classes
 ================================
 
 There are 4 Storage Pool packages to choose from in Deepend.
@@ -96,7 +115,7 @@ There are 4 Storage Pool packages to choose from in Deepend.
   used with all the subpool packages without specifying a subpool, which results
   in an object being allocated to the default subpool for the storage pool.
 
-3.0 BUILD INSTRUCTIONS 
+4.0 BUILD INSTRUCTIONS 
 ======================
 
 - For the Irvine ICC Ada 2005 compiler on  Windows, execute the 
@@ -142,7 +161,7 @@ There are 4 Storage Pool packages to choose from in Deepend.
   the executable from within the ide, or alternatively use gnatmake to 
   perform the equivalent actions described in the .gpr file.
 
-4.0 TESTED PLATFORMS
+5.0 TESTED PLATFORMS
 ====================
 
 Deepend has been ported to the following compilers and platforms.
@@ -159,7 +178,7 @@ since there are no dependencies on vendor specific run-time libraries.
 It should also be possible to compile Deepend for any target
 system, since Deepend does not rely on any OS-specific support.
 
-5.0 LIMITATIONS
+6.0 LIMITATIONS
 ===============
 
 For the Ada 95, and Ada 2005 versions of the packages, it is erroneous
@@ -190,25 +209,6 @@ instead of access parameters, pre/post conditions, expression functions,
 subtype predicates, invariants, simpler iterator syntax, and most 
 importantly utilization of the new standard subpools storage package, 
 Ada.Storage_Pools.Subpools.
-
-6.0 DOWNLOADING
-===============
-
-The latest stable release and older releases may be downloaded from;
-
-https://sourceforge.net/projects/deepend/files/
-
-For those who want the current development versions of the source they
-can download using git (http://git-scm.com/) by issuing the following
-commands
-
-  mkdir sandbox
-  cd sandbox
-  git clone git://deepend.git.sourceforge.net/gitroot/deepend/deepend
-
-The current development version typically will correspond to the latest
-stable release, but may at times be unstable when new features are being
-worked on.
 
 7.0 TEST EXECUTABLES
 ====================
