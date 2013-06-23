@@ -1,6 +1,12 @@
 Deepend Version History.
 
-deepend-3.2 (Current Version)
+deepend-3.3 (Current Version)
+- Fixed issues preventing compilation of Ada 2012 version for 
+  GNAT GPL 2013
+- Removed workarounds for GNAT compiler bugs for the Ada 2012
+  version that were fixed in the GNAT GPL 2013 version of the compiler.
+
+deepend-3.2
 - Ada 95 versions added
 - Added Bounded forms for all the storage pool types.
 - Added exception handling, and allowed scoped subpools to not be
