@@ -301,11 +301,9 @@ package Dynamic_Pools is
 private
 
    subtype Storage_Array is System.Storage_Elements.Storage_Array
-   with Static_Predicate => Storage_Array'First = 1;
+   with Dynamic_Predicate => Storage_Array'First = 1;
 
    type Storage_Array_Access is access Storage_Array;
-
-   pragma Warnings (Off, "*Warnings Off*could be omitted*");
 
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
@@ -317,8 +315,6 @@ private
    package Subpool_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Dynamic_Subpool_Access);
-
-   pragma Warnings (On, "*Warnings Off*could be omitted*");
 
    protected type Subpool_Set is
 
