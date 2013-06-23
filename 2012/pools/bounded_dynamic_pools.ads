@@ -297,19 +297,15 @@ private
    use Ada;
 
    subtype Storage_Array is System.Storage_Elements.Storage_Array
-   with Static_Predicate => Storage_Array'First = 1;
+   with Dynamic_Predicate => Storage_Array'First = 1;
 
    type Dynamic_Subpool;
    type Dynamic_Subpool_Access is access all Dynamic_Subpool;
-
-   pragma Warnings (Off, "*Warnings Off for *Position*could be omitted*");
 
    package Subpool_Vector is new
      Ada.Containers.Bounded_Vectors
        (Index_Type => Positive,
         Element_Type => Dynamic_Subpool_Access);
-
-   pragma Warnings (On, "*Warnings Off for *Position*could be omitted*");
 
    protected type Subpool_Set (Size : Containers.Count_Type) is
 
