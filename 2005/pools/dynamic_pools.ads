@@ -281,8 +281,6 @@ private
 
    type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
 
-   pragma Warnings (Off, "*Warnings Off*could be omitted*");
-
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Storage_Array_Access);
@@ -293,8 +291,6 @@ private
    package Subpool_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Dynamic_Subpool_Access);
-
-   pragma Warnings (On, "*Warnings Off*could be omitted*");
 
    protected type Subpool_Set is
 
