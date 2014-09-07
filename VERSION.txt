@@ -1,6 +1,28 @@
 Deepend Version History.
 
-deepend-3.3 (Current Version)
+deepend-3.4 (Current Version)
+- Fixed issues preventing compilation of Ada 2012 version for 
+  GNAT GPL 2014
+- The Pool parameter of the 
+  System.Storage_Pools.Subpools.Default_Subpool_For_Pool function was
+  finalized to be an in out parameter for the Ada 2012 standard.
+  This requires changes to the Deepend pools, since they override this
+  function. In addition, the Ada 2005 and Ada 95 versions of Deepend
+  also were modified to reflect this change. In Ada 95 and Ada 2005,
+  functions cannot have in out parameters, so instead, the parameters
+  were changed to be access parameters, so that the Ada 95 and Ada 2005
+  version more closely matches the Ada 2012 version.
+- In the Ada 2012 version, there were static_predicates defined for
+  private declarations, which in fact needed to be dynamic_predicates.
+  Since these were private declarations, the predicates were removed,
+  since they weren't very useful since they were private declarations,
+  and the need for dynamic checks for this was deemed as worthwhile.
+- Removed workarounds for GNAT compiler bugs that were fixed in the
+  GNAT GPL 2014 version of the compiler. In particular, the storage 
+  pools have default discriminants which now can be left unspecified
+  to use the defaults.
+
+deepend-3.3
 - Fixed issues preventing compilation of Ada 2012 version for 
   GNAT GPL 2013
 - Removed workarounds for GNAT compiler bugs for the Ada 2012
