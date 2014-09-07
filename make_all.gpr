@@ -1,0 +1,22 @@
+aggregate project Make_All is
+   for Project_Files use (
+     "./2012/test/binary_tree_benchmark_using_subpool_allocations/bounded_binary_trees_ada2012.gpr",
+     "./2012/test/binary_tree_benchmark_using_subpool_allocations/binary_trees_ada2012.gpr",
+     "./2012/test/test_bounded_dynamic_pools_ada2012.gpr",
+     "./2012/test/test_dynamic_pools_ada2012.gpr",
+     "./2012/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/bounded_binary_trees_ada2012.gpr",
+     "./2012/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/binary_trees_ada2012.gpr",
+     "./95/test/binary_tree_benchmark_using_subpool_allocations/bounded_binary_trees_ada95.gpr",
+     "./95/test/binary_tree_benchmark_using_subpool_allocations/binary_trees_ada95.gpr",
+     "./95/test/test_dynamic_pools_ada95.gpr",
+     "./95/test/test_bounded_dynamic_pools_ada95.gpr",
+     "./95/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/bounded_binary_trees_ada95.gpr",
+     "./95/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/binary_trees_ada95.gpr",
+     "./2005/test/binary_tree_benchmark_using_subpool_allocations/bounded_binary_trees_ada2005.gpr",
+     "./2005/test/binary_tree_benchmark_using_subpool_allocations/binary_trees_ada2005.gpr",
+     "./2005/test/test_bounded_dynamic_pools_ada2005.gpr",
+     "./2005/test/test_dynamic_pools_ada2005.gpr",
+     "./2005/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/bounded_binary_trees_ada2005.gpr",
+     "./2005/test/binary_tree_benchmark_using_access_types_with_dedicated_pools/binary_trees_ada2005.gpr"
+     );
+end Make_All;
