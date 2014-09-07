@@ -2,7 +2,7 @@
 --
 --              Deepend - Dynamic Pools for Ada 2005 and Ada 2012
 --
---                B O U N D E D   D Y N A M I C   P O O L S
+--                 B O U N D E D   D Y N A M I C   P O O L S
 --
 --                                B o d y
 --
@@ -135,7 +135,7 @@ package body Bounded_Dynamic_Pools is
          Storage_Address,
          Size_In_Storage_Elements,
          Alignment,
-         Default_Subpool_For_Pool (Pool));
+         Default_Subpool_For_Pool (Pool'Access));
 
    end Allocate;
 
@@ -155,11 +155,9 @@ package body Bounded_Dynamic_Pools is
       pragma Assert (Is_Owner (Subpool, Current_Task));
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Sub.Active'Length - Sub.Next_Allocation then
-
+      if Size_In_Storage_Elements > Sub.Active'Length - Sub.Next_Allocation
+      then
          raise Storage_Error;
-
       end if;
 
       Storage_Address := Sub.Active (Sub.Next_Allocation)'Address;
@@ -268,9 +266,8 @@ package body Bounded_Dynamic_Pools is
       --  Handle case when deallocating the default pool
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then
-        Subpool = Pool.Default_Subpool then
-
+      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
+      then
          Pool.Default_Subpool :=
            Create_Subpool (Pool'Access,
                            Size => Pool.Default_Subpool_Size);
@@ -287,7 +284,7 @@ package body Bounded_Dynamic_Pools is
    --------------------------------------------------------------
 
    function Default_Subpool_For_Pool
-     (Pool : Dynamic_Pool)
+     (Pool : access Dynamic_Pool)
       return Subpool_Handle is
    begin
       return Pool.Default_Subpool;

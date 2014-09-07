@@ -35,7 +35,7 @@ package body Dynamic_Pools is
    procedure Free_Storage_Element (Position : Storage_Vector.Cursor);
 
    procedure Free_Storage_Array is new Ada.Unchecked_Deallocation
-     (Object => System.Storage_Elements.Storage_Array,
+     (Object => Storage_Array,
       Name => Storage_Array_Access);
 
    procedure Free_Subpool is new Ada.Unchecked_Deallocation
@@ -59,13 +59,6 @@ package body Dynamic_Pools is
 
       --------------------------------------------------------------
 
-      function Get_Subpools_For_Finalization return Subpool_Vector.Vector is
-      begin
-         return Subpools;
-      end Get_Subpools_For_Finalization;
-
-      --------------------------------------------------------------
-
       procedure Delete
         (Subpool : in out Dynamic_Subpool_Access)
       is
@@ -75,6 +68,13 @@ package body Dynamic_Pools is
          Subpools.Delete (Position);
          pragma Warnings (On, "*Position*modified*but*never referenced*");
       end Delete;
+
+      --------------------------------------------------------------
+
+      function Get_Subpools_For_Finalization return Subpool_Vector.Vector is
+      begin
+         return Subpools;
+      end Get_Subpools_For_Finalization;
 
       --------------------------------------------------------------
 
@@ -140,13 +140,14 @@ package body Dynamic_Pools is
    begin
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Sub.Active'Length - Sub.Next_Allocation then
+      if Size_In_Storage_Elements > Sub.Active'Length - Sub.Next_Allocation
+      then
 
          Sub.Used_List.Append (New_Item => Sub.Active);
 
          if Sub.Free_List.Length > 0 and then
-           Sub.Free_List.First_Element'Length >= Size_In_Storage_Elements then
+           Sub.Free_List.First_Element'Length >= Size_In_Storage_Elements
+         then
             Sub.Active := Sub.Free_List.First_Element;
             Sub.Free_List.Delete_First;
          else
@@ -278,8 +279,8 @@ package body Dynamic_Pools is
       --  Handle case when deallocating the default pool
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then
-        Subpool = Pool.Default_Subpool then
+      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
+      then
 
          Pool.Default_Subpool :=
            Create_Subpool (Pool,

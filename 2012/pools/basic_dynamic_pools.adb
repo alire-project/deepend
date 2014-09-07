@@ -34,7 +34,7 @@ package body Basic_Dynamic_Pools is
    procedure Free_Storage_Element (Position : Storage_Vector.Cursor);
 
    procedure Free_Storage_Array is new Ada.Unchecked_Deallocation
-     (Object => System.Storage_Elements.Storage_Array,
+     (Object => Storage_Array,
       Name => Storage_Array_Access);
 
    --------------------------------------------------------------
@@ -51,13 +51,14 @@ package body Basic_Dynamic_Pools is
    begin
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Pool.Active'Length - Pool.Next_Allocation then
+      if Size_In_Storage_Elements > Pool.Active'Length - Pool.Next_Allocation
+      then
 
          Pool.Used_List.Append (New_Item => Pool.Active);
 
          if Pool.Free_List.Length > 0 and then
-           Pool.Free_List.First_Element'Length >= Size_In_Storage_Elements then
+           Pool.Free_List.First_Element'Length >= Size_In_Storage_Elements
+         then
             Pool.Active := Pool.Free_List.First_Element;
             Pool.Free_List.Delete_First;
          else
@@ -94,7 +95,8 @@ package body Basic_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
+   overriding
+   procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
    begin
       Pool.Active := new System.Storage_Elements.Storage_Array
         (1 .. Pool.Block_Size);

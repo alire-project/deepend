@@ -32,7 +32,7 @@ with Ada.Unchecked_Deallocation;
 package body Basic_Bounded_Dynamic_Pools is
 
    procedure Free_Storage_Array is new Ada.Unchecked_Deallocation
-     (Object => System.Storage_Elements.Storage_Array,
+     (Object => Storage_Array,
       Name => Storage_Array_Access);
 
    --------------------------------------------------------------
@@ -46,12 +46,14 @@ package body Basic_Bounded_Dynamic_Pools is
    is
       pragma Unreferenced (Alignment);
    begin
+
       pragma Assert (Is_Owner (Pool, Current_Task));
 
       if Pool.Heap_Allocated then
 
          if Size_In_Storage_Elements >
-            Pool.Active_Access'Length - Pool.Next_Allocation then
+           Pool.Active_Access'Length - Pool.Next_Allocation
+         then
 
             raise Storage_Error;
          end if;
@@ -60,7 +62,8 @@ package body Basic_Bounded_Dynamic_Pools is
 
       else
          if Size_In_Storage_Elements >
-            Pool.Active'Length - Pool.Next_Allocation then
+           Pool.Active'Length - Pool.Next_Allocation
+         then
 
             raise Storage_Error;
          end if;
@@ -84,7 +87,8 @@ package body Basic_Bounded_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   overriding procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
+   overriding
+   procedure Initialize (Pool : in out Basic_Dynamic_Pool) is
    begin
       if Pool.Heap_Allocated then
          Pool.Active_Access := new System.Storage_Elements.Storage_Array

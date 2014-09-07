@@ -66,15 +66,15 @@ package body Basic_Dynamic_Pools is
       pragma Assert (Is_Owner (Pool, Current_Task));
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Pool.Active'Length - Pool.Next_Allocation then
+      if Size_In_Storage_Elements > Pool.Active'Length - Pool.Next_Allocation
+      then
 
          Append (Container => Pool.Used_List,
                  New_Item => Pool.Active);
 
          if Length (Pool.Free_List) > 0 and then
-           Last_Element
-             (Pool.Free_List)'Length >= Size_In_Storage_Elements then
+           Last_Element (Pool.Free_List)'Length >= Size_In_Storage_Elements
+         then
             Pool.Active := Last_Element (Pool.Free_List);
             Delete_Last (Pool.Free_List);
          else

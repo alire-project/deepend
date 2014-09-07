@@ -132,11 +132,9 @@ package body Bounded_Dynamic_Pools is
    begin
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Sub.Active'Length - Sub.Next_Allocation then
-
+      if Size_In_Storage_Elements > Sub.Active'Length - Sub.Next_Allocation
+      then
          raise Storage_Error;
-
       end if;
 
       Storage_Address := Sub.Active (Sub.Next_Allocation)'Address;
@@ -287,8 +285,8 @@ package body Bounded_Dynamic_Pools is
       --  Handle case when deallocating the default pool
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then
-        Subpool = Pool.Default_Subpool then
+      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
+      then
 
          Pool.Default_Subpool :=
            Create_Subpool (Pool,

@@ -191,13 +191,14 @@ package body Dynamic_Pools is
       pragma Assert (Is_Owner (Subpool, Current_Task));
 
       --  If there's not enough space in the current hunk of memory
-      if Size_In_Storage_Elements >
-        Sub.Active'Length - Sub.Next_Allocation then
+      if Size_In_Storage_Elements > Sub.Active'Length - Sub.Next_Allocation
+      then
 
          Append (Container => Sub.Used_List, New_Item => Sub.Active);
 
          if Length (Sub.Free_List) > 0 and then
-           Last_Element (Sub.Free_List)'Length >= Size_In_Storage_Elements then
+           Last_Element (Sub.Free_List)'Length >= Size_In_Storage_Elements
+         then
             Sub.Active := Last_Element (Sub.Free_List);
             Delete_Last (Sub.Free_List);
          else
@@ -361,9 +362,8 @@ package body Dynamic_Pools is
       --  Handle case when deallocating the default pool
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then
-        Subpool = Pool.Default_Subpool then
-
+      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
+      then
          Pool.Default_Subpool :=
            Create_Subpool (Pool'Access,
                            Block_Size => Pool.Default_Block_Size);
@@ -376,7 +376,7 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    function Default_Subpool_For_Pool
-     (Pool : Dynamic_Pool)
+     (Pool : access Dynamic_Pool)
       return Subpool_Handle is
    begin
       return Pool.Default_Subpool;
