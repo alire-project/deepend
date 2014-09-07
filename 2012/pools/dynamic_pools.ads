@@ -121,12 +121,12 @@
 --    other strategies such as garbage collection, or individual object
 --    reclamation in a more deterministic fashion.
 --
---  ** NOTE: In the Ada 2005 version of Dynamic_Pools, it is erroneous to
---    allocate objects that need finalization eg. (Tasks, protected types,
---    or objects of types inherited from types defined in Ada.Finalization)
---  and then deallocate the subpool associated with those objects before
---  they would have otherwise been finalized.
-
+--  ** NOTE: In the Ada 95 and Ada 2005 version of Dynamic_Pools, it is
+--    erroneous to allocate objects that need finalization eg. (Tasks,
+--    protected types, or objects of types inherited from types defined in
+--    Ada.Finalization) and then deallocate the subpool associated with those
+--    objects before they would have otherwise been finalized.
+--
 --  For Ada 2012, it is only erroneous to allocate task objects or objects
 --  containing task components to a subpool.
 
@@ -266,7 +266,7 @@ package Dynamic_Pools is
 
    overriding
    function Default_Subpool_For_Pool
-     (Pool : Dynamic_Pool) return not null Subpool_Handle;
+     (Pool : in out Dynamic_Pool) return not null Subpool_Handle;
    --  This calls returns the default subpool for the pool. It raises
    --  Storage_Error if Pool.Default_Block_Size is zero. The default
    --  subpool is used when Ada's "new" operator is used without specifying
@@ -300,8 +300,7 @@ package Dynamic_Pools is
 
 private
 
-   subtype Storage_Array is System.Storage_Elements.Storage_Array
-   with Dynamic_Predicate => Storage_Array'First = 1;
+   subtype Storage_Array is System.Storage_Elements.Storage_Array;
 
    type Storage_Array_Access is access Storage_Array;
 
@@ -393,7 +392,7 @@ private
 
    overriding
    function Default_Subpool_For_Pool
-     (Pool : Dynamic_Pool) return not null Subpool_Handle
+     (Pool : in out Dynamic_Pool) return not null Subpool_Handle
    is (Pool.Default_Subpool);
 
    overriding function Storage_Size

@@ -121,11 +121,11 @@
 --    other strategies such as garbage collection, or individual object
 --    reclamation in a more deterministic fashion.
 --
---  ** NOTE: In the Ada 2005 version of Dynamic_Pools, it is erroneous to
---    allocate objects that need finalization eg. (Tasks, protected types,
---    or objects of types inherited from types defined in Ada.Finalization)
---  and then deallocate the subpool associated with those objects before
---  they would have otherwise been finalized.
+--  ** NOTE: In the Ada 95 and Ada 2005 version of Dynamic_Pools, it is
+--    erroneous to allocate objects that need finalization eg. (Tasks,
+--    protected types, or objects of types inherited from types defined in
+--    Ada.Finalization) and then deallocate the subpool associated with those
+--    objects before they would have otherwise been finalized.
 
 --  For Ada 2012, it is only erroneous to allocate task objects or objects
 --  containing task components to a subpool.

@@ -121,12 +121,12 @@
 --    other strategies such as garbage collection, or individual object
 --    reclamation in a more deterministic fashion.
 --
---  ** NOTE: In the Ada 2005 version of Dynamic_Pools, it is erroneous to
---    allocate objects that need finalization eg. (Tasks, protected types,
---    or objects of types inherited from types defined in Ada.Finalization)
---  and then deallocate the subpool associated with those objects before
---  they would have otherwise been finalized.
-
+--  ** NOTE: In the Ada 95 and Ada 2005 version of Dynamic_Pools, it is
+--    erroneous to allocate objects that need finalization eg. (Tasks,
+--    protected types, or objects of types inherited from types defined in
+--    Ada.Finalization) and then deallocate the subpool associated with those
+--    objects before they would have otherwise been finalized.
+--
 --  For Ada 2012, it is only erroneous to allocate task objects or objects
 --  containing task components to a subpool.
 
@@ -152,7 +152,8 @@ package Basic_Dynamic_Pools is
    --  The Block_Size specifies how much memory is allocated from the heap
    --  when the storage pool needs more storage.
 
-   overriding function Storage_Size
+   overriding
+   function Storage_Size
      (Pool : Basic_Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of storage allocated to the pool,
    --  including storage that is allocated but not used.
@@ -185,11 +186,9 @@ private
 
    type Storage_Array_Access is access System.Storage_Elements.Storage_Array;
 
-   pragma Warnings (Off, "*Warnings Off*could be omitted");
    package Storage_Vector is new
      Ada.Containers.Vectors (Index_Type => Positive,
                              Element_Type => Storage_Array_Access);
-   pragma Warnings (On, "*Warnings Off*could be omitted");
 
    subtype Storage_Array_Index is System.Storage_Elements.Storage_Offset range
      1 .. System.Storage_Elements.Storage_Offset'Last;

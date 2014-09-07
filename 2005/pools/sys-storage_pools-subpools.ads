@@ -1,7 +1,7 @@
---  This is intended to closely map the proposal for Ada 2012 for Storage
---  Subpools, and represents the package System.Storage_Pools.Subpools as \
---  defined in AI05-0111-3. When Ada 2012 becomes available, this package will
---  be deleted from Deepend.
+--  This is intended to closely map the Ada 2012 support for Storage
+--  Subpools, and represents the package System.Storage_Pools.Subpools as
+--  defined in AI05-0111-3. In the Ada 2012 version, this package no longer
+--  exists as it is replaced by System.Storage_Pools.Subpools.
 
 with System.Storage_Elements; use System.Storage_Elements;
 
@@ -66,12 +66,14 @@ package Sys.Storage_Pools.Subpools is
    --  specified subpool. Unchecked_Deallocate_Subpool calls this.
 
    function Default_Subpool_For_Pool
-     (Pool : Root_Storage_Pool_With_Subpools)
+     (Pool : not null access Root_Storage_Pool_With_Subpools)
       return not null Subpool_Handle;
    --  Returns a handle of the default subpool for Pool.
    --  This version raises Program_Error; it should be overridden for
    --  types that wish to support default subpools (that is, allocators
    --  without a subpool_specification).
+   pragma Compile_Time_Warning
+     (Ada_2012_Warnings, "Pool is an in out parameter in Ada 2012");
 
    overriding
    procedure Allocate

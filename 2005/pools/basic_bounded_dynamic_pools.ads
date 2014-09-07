@@ -121,11 +121,11 @@
 --    other strategies such as garbage collection, or individual object
 --    reclamation in a more deterministic fashion.
 --
---  ** NOTE: In the Ada 2005 version of Dynamic_Pools, it is erroneous to
---    allocate objects that need finalization eg. (Tasks, protected types,
---    or objects of types inherited from types defined in Ada.Finalization)
---  and then deallocate the subpool associated with those objects before
---  they would have otherwise been finalized.
+--  ** NOTE: In the Ada 95 and Ada 2005 version of Dynamic_Pools, it is
+--    erroneous to allocate objects that need finalization eg. (Tasks,
+--    protected types, or objects of types inherited from types defined in
+--    Ada.Finalization) and then deallocate the subpool associated with those
+--    objects before they would have otherwise been finalized.
 
 --  For Ada 2012, it is only erroneous to allocate task objects or objects
 --  containing task components to a subpool.
@@ -152,7 +152,8 @@ package Basic_Bounded_Dynamic_Pools is
    --  If Heap_Allocated is true, the storage is allocated from
    --  heap, otherwise the storage is directly in the Pool object.
 
-   overriding function Storage_Size
+   overriding
+   function Storage_Size
      (Pool : Basic_Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the amount of storage managed by the pool.
 

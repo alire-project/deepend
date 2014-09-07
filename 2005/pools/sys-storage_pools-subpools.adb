@@ -1,7 +1,7 @@
---  This is intended to closely map the proposal for Ada 2012 for Storage
---  Subpools, and represents the package System.Storage_Pools.Subpools as
---  defined in AI05-0111-3. When Ada 2012 becomes available, this package will
---  be deleted from Deepend.
+--  This is intended to closely map to the Ada 2012 Storage Subpools
+--  package, and represents the package System.Storage_Pools.Subpools as
+--  defined in AI05-0111-3. In the Ada 2012 version of Deepend, this package
+--  does not exist, as it is replaced by System.Storage_Pools.Subpools.
 
 package body Sys.Storage_Pools.Subpools is
 
@@ -39,7 +39,7 @@ package body Sys.Storage_Pools.Subpools is
    end Storage_Size;
 
    function Default_Subpool_For_Pool
-     (Pool : Root_Storage_Pool_With_Subpools)
+     (Pool : not null access Root_Storage_Pool_With_Subpools)
       return not null Subpool_Handle is
    begin
       raise Program_Error;
