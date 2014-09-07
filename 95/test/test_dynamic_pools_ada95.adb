@@ -91,7 +91,7 @@ is
    procedure Deallocate_Default_Subpool
    is
       Default_Subpool : Dynamic_Pools.Subpool_Handle :=
-        Default_Subpool_For_Pool (Pool);
+        Default_Subpool_For_Pool (Pool'Access);
    begin
 
       Put_Line ("Deallocating Default Subpool");
@@ -137,17 +137,17 @@ begin
    Put_Line ("Storage Used in Default Subpool=" &
                Storage_Elements.Storage_Count'Image
        (Dynamic_Pools.Storage_Used
-          (Subpool => Default_Subpool_For_Pool (Pool))) &
+          (Subpool => Default_Subpool_For_Pool (Pool'Access))) &
                ", Storage Size=" &
         Storage_Elements.Storage_Count'Image
         (Dynamic_Pools.Storage_Size
-           (Subpool => Default_Subpool_For_Pool (Pool))));
+           (Subpool => Default_Subpool_For_Pool (Pool'Access))));
 
    Put_Line
      ("Bytes Stored in Other subpools=" &
         Storage_Elements.Storage_Count'Image
         (Storage_Used (Pool) - Dynamic_Pools.Storage_Used
-           (Subpool => Default_Subpool_For_Pool (Pool))));
+           (Subpool => Default_Subpool_For_Pool (Pool'Access))));
 
    begin
 
@@ -216,7 +216,7 @@ begin
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
         (Dynamic_Pools.Storage_Used
-           (Subpool => Default_Subpool_For_Pool (Pool))));
+           (Subpool => Default_Subpool_For_Pool (Pool'Access))));
 
    pragma Warnings (Off, "*Object*is assigned but never read*");
    declare
@@ -235,7 +235,7 @@ begin
         ("Bytes Stored in Default Subpool=" &
            Storage_Elements.Storage_Count'Image
            (Dynamic_Pools.Storage_Size
-              (Subpool => Default_Subpool_For_Pool (Pool))));
+              (Subpool => Default_Subpool_For_Pool (Pool'Access))));
    end;
    pragma Warnings (On, "*Object*is assigned but never read*");
 
@@ -247,7 +247,7 @@ begin
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
         (Dynamic_Pools.Storage_Used
-           (Subpool => Default_Subpool_For_Pool (Pool))));
+           (Subpool => Default_Subpool_For_Pool (Pool'Access))));
    Put_Line ("At this point, the nodes and their descriptions still exist,");
    Put_Line ("because their subpools still exist, however the node names");
    Put_Line ("shouldn't exist, because the default subpool had been freed.");

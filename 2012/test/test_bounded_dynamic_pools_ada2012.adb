@@ -12,14 +12,7 @@ with Ada.Finalization;
 procedure Test_Bounded_Dynamic_Pools_Ada2012
 is
 
-   Pool : Bounded_Dynamic_Pools.Dynamic_Pool
-     (Default_Subpool_Size =>
-        Bounded_Dynamic_Pools.Default_Subpool_Default_Size,
-      Maximum_Subpools =>
-        Bounded_Dynamic_Pools.Default_Maximum_Subpool_Count);
-   pragma Compile_Time_Warning
-     (True, "GNAT Compiler bug, should be able to use default discriminants");
-
+   Pool : Bounded_Dynamic_Pools.Dynamic_Pool;
    pragma Default_Storage_Pool (Pool);
 
    subtype Id_String is String (1 .. 10);
@@ -169,25 +162,32 @@ begin
 
    List := Recurse (Recursion_Depth);
 
-   Put_Line ("Storage Used=" &
-               Storage_Elements.Storage_Count'Image (Pool.Storage_Used) &
-               ", Storage Size=" &
-               Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+   declare
+      Total_Storage_Used : constant Storage_Elements.Storage_Count :=
+        Pool.Storage_Used;
 
-   Put_Line ("Storage Used in Default Subpool=" &
-               Storage_Elements.Storage_Count'Image
-       (Bounded_Dynamic_Pools.Storage_Used
-          (Subpool => Pool.Default_Subpool_For_Pool)) &
-               ", Storage Size=" &
-       Storage_Elements.Storage_Count'Image
-       (Bounded_Dynamic_Pools.Storage_Size
-          (Subpool => Pool.Default_Subpool_For_Pool)));
+      Subpool_Storage_Used : constant Storage_Elements.Storage_Count :=
+        Bounded_Dynamic_Pools.Storage_Used
+             (Subpool => Pool.Default_Subpool_For_Pool);
+   begin
 
-   Put_Line
-     ("Bytes Stored in Other subpools=" &
-        Storage_Elements.Storage_Count'Image
-        (Pool.Storage_Used - Bounded_Dynamic_Pools.Storage_Used
-           (Subpool => Pool.Default_Subpool_For_Pool)));
+      Put_Line ("Storage Used=" &
+                  Storage_Elements.Storage_Count'Image (Total_Storage_Used) &
+                  ", Storage Size=" &
+                  Storage_Elements.Storage_Count'Image (Pool.Storage_Size));
+
+      Put_Line ("Storage Used in Default Subpool=" &
+                  Storage_Elements.Storage_Count'Image (Subpool_Storage_Used) &
+                  ", Storage Size=" &
+          Storage_Elements.Storage_Count'Image
+          (Bounded_Dynamic_Pools.Storage_Size
+             (Subpool => Pool.Default_Subpool_For_Pool)));
+
+      Put_Line
+        ("Bytes Stored in Other subpools=" &
+           Storage_Elements.Storage_Count'Image
+           (Total_Storage_Used - Subpool_Storage_Used));
+   end;
 
    pragma Warnings (Off, "*Object*is*never read*");
    declare
