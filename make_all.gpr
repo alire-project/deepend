@@ -1,3 +1,6 @@
+-- To execute this make file, type;
+--    gprbuild -Pmake_all.gpr
+
 aggregate project Make_All is
    for Project_Files use (
      "./2012/test/binary_tree_benchmark_using_subpool_allocations/bounded_binary_trees_ada2012.gpr",
