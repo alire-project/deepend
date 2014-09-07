@@ -160,6 +160,11 @@ There are 4 Storage Pool packages to choose from in Deepend.
   from either the 95, 2005, or 2012 subfolder into the GPS ide, and build
   the executable from within the ide, or alternatively use gnatmake to 
   perform the equivalent actions described in the .gpr file.
+  You can also execute the master build for all projects by entering
+  the following command from the command line from the root folder.
+ 
+       gprbuild -Pmake_all.gpr
+
 
 5.0 TESTED PLATFORMS
 ====================
@@ -206,9 +211,11 @@ version of the Dynamic_Pools package is that the Ada 2012 version
 takes advantages of the new features of the language, including
 defaults for discriminated types, functions with in out parameters 
 instead of access parameters, pre/post conditions, expression functions,
-subtype predicates, invariants, simpler iterator syntax, and most 
+subtype predicates, type invariants, simpler iterator syntax, and most 
 importantly utilization of the new standard subpools storage package, 
-Ada.Storage_Pools.Subpools.
+Ada.Storage_Pools.Subpools. In Ada 2012, the Default_Storage_Pool 
+pragma may be used to specify a Deepend pool as the default storage
+pool. See RM (13.11.3).
 
 7.0 TEST EXECUTABLES
 ====================
