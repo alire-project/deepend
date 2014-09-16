@@ -129,6 +129,7 @@ package body Dynamic_Pools is
            (Subpool_List => new Subpool_Array (1 .. 1024),
             Last => 0);
       end Initialize;
+
       --------------------------------------------------------------
 
       function Storage_Total return Storage_Elements.Storage_Count
@@ -434,6 +435,8 @@ package body Dynamic_Pools is
       else
          Pool.Default_Subpool := null;
       end if;
+
+      Pool.Owner := Ada.Task_Identification.Current_Task;
    end Initialize;
 
    --------------------------------------------------------------
@@ -471,6 +474,15 @@ package body Dynamic_Pools is
    --------------------------------------------------------------
 
    function Is_Owner
+     (Pool : Dynamic_Pool;
+      T : Task_Id := Current_Task) return Boolean is
+   begin
+      return (Pool.Owner = T);
+   end Is_Owner;
+
+   --------------------------------------------------------------
+
+   function Is_Owner
      (Subpool : Subpool_Handle;
       T : Task_Id := Current_Task) return Boolean is
    begin
@@ -491,6 +503,20 @@ package body Dynamic_Pools is
    begin
       return Natural (Container.Last);
    end Length;
+
+   --------------------------------------------------------------
+
+   procedure Set_Owner
+     (Pool : in out Dynamic_Pool;
+      T : Task_Id := Current_Task) is
+   begin
+      pragma Assert
+        ((Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
+         or else (Is_Owner (Pool) and then T = Null_Task_Id));
+
+      Pool.Owner := T;
+
+   end Set_Owner;
 
    --------------------------------------------------------------
 

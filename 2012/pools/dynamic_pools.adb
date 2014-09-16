@@ -52,6 +52,13 @@ package body Dynamic_Pools is
 
    protected body Subpool_Set is
 
+      function Active_Subpools return Ada.Containers.Count_Type is
+      begin
+         return Subpools.Length;
+      end Active_Subpools;
+
+      --------------------------------------------------------------
+
       procedure Add (Subpool : Dynamic_Subpool_Access) is
       begin
          Subpools.Append (Subpool);
@@ -63,11 +70,27 @@ package body Dynamic_Pools is
         (Subpool : in out Dynamic_Subpool_Access)
       is
          Position : Subpool_Vector.Cursor := Subpools.Find (Subpool);
+         use type Subpool_Vector.Cursor;
       begin
          pragma Warnings (Off, "*Position*modified*but*never referenced*");
-         Subpools.Delete (Position);
+
+         if Position /= Subpool_Vector.No_Element then
+            Subpools.Delete (Position);
+         end if;
+
          pragma Warnings (On, "*Position*modified*but*never referenced*");
       end Delete;
+
+      --------------------------------------------------------------
+
+      function Exists
+        (Subpool : Dynamic_Subpool_Access) return Boolean
+      is
+         Position : constant Subpool_Vector.Cursor := Subpools.Find (Subpool);
+         use type Subpool_Vector.Cursor;
+      begin
+         return (if Position = Subpool_Vector.No_Element then False else True);
+      end Exists;
 
       --------------------------------------------------------------
 
@@ -260,34 +283,40 @@ package body Dynamic_Pools is
       use type Storage_Pools.Subpools.Subpool_Handle;
    begin
 
-      --  Only removes the access value from the Subpools container
-      --  Does not actually delete the object which we still have a
-      --  reference to above
-      Pool.Subpools.Delete (The_Subpool);
+      if Pool.Subpools.Exists (The_Subpool) then
 
-      The_Subpool.Used_List.Iterate
-        (Process => Free_Storage_Element'Access);
+         --  Only removes the access value from the Subpools container
+         --  Does not actually delete the object which we still have a
+         --  reference to above
+         Pool.Subpools.Delete (The_Subpool);
 
-      The_Subpool.Used_List.Clear;
+         The_Subpool.Used_List.Iterate
+           (Process => Free_Storage_Element'Access);
 
-      The_Subpool.Free_List.Iterate
-        (Process => Free_Storage_Element'Access);
+         The_Subpool.Used_List.Clear;
 
-      The_Subpool.Free_List.Clear;
-      Free_Storage_Array (The_Subpool.Active);
+         The_Subpool.Free_List.Iterate
+           (Process => Free_Storage_Element'Access);
 
-      --  Handle case when deallocating the default pool
-      --  Should only occur if client attempts to obtain the default
-      --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
-      then
+         The_Subpool.Free_List.Clear;
+         Free_Storage_Array (The_Subpool.Active);
 
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool,
-                           Block_Size => Pool.Default_Block_Size);
+         --  Handle case when deallocating the default pool
+         --  Should only occur if client attempts to obtain the default
+         --  subpool, then calls Unchecked_Deallocate_Subpool on that object
+         if not Pool.Finalizing and then
+           Pool.Default_Subpool /= null and then
+           Subpool = Pool.Default_Subpool
+         then
+
+            Pool.Default_Subpool :=
+              Create_Subpool (Pool,
+                              Block_Size => Pool.Default_Block_Size);
+         end if;
+
+         Free_Subpool (The_Subpool);
+
       end if;
-
-      Free_Subpool (The_Subpool);
 
    end Deallocate_Subpool;
 
@@ -302,6 +331,8 @@ package body Dynamic_Pools is
       Subpools : constant Subpool_Vector.Vector :=
         Pool.Subpools.Get_Subpools_For_Finalization;
    begin
+
+      Pool.Finalizing := True;
 
       for E in Subpools.Iterate loop
          declare
@@ -320,6 +351,7 @@ package body Dynamic_Pools is
          end;
 
       end loop;
+
    end Finalize;
 
    --------------------------------------------------------------
@@ -349,6 +381,9 @@ package body Dynamic_Pools is
    begin
       Pool.Default_Subpool :=
         (if Pool.Default_Block_Size > 0 then Pool.Create_Subpool else null);
+
+      Pool.Owner := Ada.Task_Identification.Current_Task;
+      Pool.Finalizing := False;
    end Initialize;
 
    --------------------------------------------------------------
@@ -384,12 +419,12 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Is_Owner
-     (Subpool : not null Subpool_Handle;
-      T : Task_Id := Current_Task) return Boolean is
+   procedure Set_Owner
+     (Pool : in out Dynamic_Pool;
+      T : Task_Id := Current_Task) is
    begin
-      return (Dynamic_Subpool (Subpool.all).Owner = T);
-   end Is_Owner;
+      Pool.Owner := T;
+   end Set_Owner;
 
    --------------------------------------------------------------
 
