@@ -96,14 +96,14 @@ There are 4 Storage Pool packages to choose from in Deepend.
   specifications). This facility relies on access type finalization to free all
   the objects from a pool, and does not otherwise support subpools.
 
-  In Ada 2012, the new allocation syntax may be used with Dynamic_Pools and
-  Bounded_Dynamic_Pools in order to specify the subpool that will contain the 
-  allocated objects.
+  In Ada 2012, the new allocation syntax may also be used with Dynamic_Pools
+  and Bounded_Dynamic_Pools in order to specify the subpool that will contain
+  the allocated objects.
 
    e.g.
         Object := new (subpool_name) Object_Type'(Value);
 
-  For Ada 95 and Ada 2005, the same effect can be obtained by using the
+  For Ada 95 and Ada 2005, a similar effect can be obtained by using the
   Allocation and Initialized_Allocation generics provided by the packages.
   However, these generics only allow allocating non-controlled objects of
   definite types to a particular subpool, whereas in Ada 2012, indefinate
@@ -114,6 +114,10 @@ There are 4 Storage Pool packages to choose from in Deepend.
   In addition, for Ada 95, Ada 2005, and Ada 2012, the "new" keyword may be
   used with all the subpool packages without specifying a subpool, which results
   in an object being allocated to the default subpool for the storage pool.
+
+  The Dynamic_Pool and Bounded_Dynamic_Pool allow the default subpool to be
+  deallocated. Another default subpool can be reinstated by calling the
+  Create_Default_Subpool subprogram.
 
 4.0 BUILD INSTRUCTIONS 
 ======================
@@ -163,7 +167,7 @@ There are 4 Storage Pool packages to choose from in Deepend.
   You can also execute the master build for all projects by entering
   the following command from the command line from the root folder.
  
-       gprbuild -Pmake_all.gpr
+       gprbuild make_all.gpr
 
 
 5.0 TESTED PLATFORMS
@@ -171,9 +175,9 @@ There are 4 Storage Pool packages to choose from in Deepend.
 
 Deepend has been ported to the following compilers and platforms.
 
-   GNAT GPL 2010-2012  (Windows, Linux)  Ada95, Ada2005, Ada2012
+   GNAT GPL 2010-2016  (Windows, Linux)  Ada95, Ada2005, Ada2012
    Irvine Ada 2005     (Windows, Linux)  Ada95, Ada2005
-   GNAT AUX FSF 4.6.1  (Android)         Ada95??, Ada2005, Ada2012??
+   GNAT AUX FSF 4.6.1-4.9.4  (Android, Rasperry Pi)  Ada95, Ada2005, Ada2012
 
 Deepend is intended to be portable to any platform that supports 
 Ada95, Ada 2005 or Ada 2012 compilation, and in theory, any Ada95, 

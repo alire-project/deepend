@@ -69,10 +69,10 @@
 --     e.g.
 --          Object := new (subpool_name) Object_Type'(Value);
 --
---  For Ada 95 and Ada 2005, the same effect can be obtained by using the
+--  For Ada 95 and Ada 2005, a similar effect can be obtained by using the
 --  Allocation and Initialized_Allocation generics provided by this package.
 --  However, these generics only allow allocating non-controlled objects of
---  definite types to a particular subpool, whereas in Ada 2012, indefinate
+--  definite types to a particular subpool, whereas in Ada 2012, indefinite
 --  types and controlled types, and other types needing finalization such as
 --  protected types may also be allocated to a subpool. Only task types or type
 --  that have tasks cannot be allocated to a subpool.
@@ -85,7 +85,7 @@
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
---  with this storage pool.
+--  with this storage pool (and has no effect).
 --
 --  Tasks can create subpools from the same Dynamic Pool object at the
 --  same time, but only one task may allocate objects from a specific subpool
@@ -109,7 +109,7 @@
 --
 --    Deallocate is not needed or used, and is implemented as a null
 --    procedure. Use of this storage pool means that there is no need for
---    calls to Ada.Unchecked_Deallocation.
+--    calls to Ada.Unchecked_Deallocation (as it has no effect).
 --
 --    The strategy is to provide an efficient storage pool that allocates
 --    objects quickly with minimal overhead, and very fast dealloction.

@@ -69,10 +69,10 @@
 --     e.g.
 --          Object := new (subpool_name) Object_Type'(Value);
 --
---  For Ada 95 and Ada 2005, the same effect can be obtained by using the
+--  For Ada 95 and Ada 2005, a similar effect can be obtained by using the
 --  Allocation and Initialized_Allocation generics provided by this package.
 --  However, these generics only allow allocating non-controlled objects of
---  definite types to a particular subpool, whereas in Ada 2012, indefinate
+--  definite types to a particular subpool, whereas in Ada 2012, indefinite
 --  types and controlled types, and other types needing finalization such as
 --  protected types may also be allocated to a subpool. Only task types or type
 --  that have tasks cannot be allocated to a subpool.
@@ -85,7 +85,7 @@
 --  all at once, instead of requiring each object to be individually
 --  reclaimed one at a time via the Ada.Unchecked_Deallocation generic.
 --  In fact, Ada.Unchecked_Deallocation is not needed or expected to be used
---  with this storage pool.
+--  with this storage pool (and has no effect).
 --
 --  Tasks can create subpools from the same Dynamic Pool object at the
 --  same time, but only one task may allocate objects from a specific subpool
@@ -109,7 +109,7 @@
 --
 --    Deallocate is not needed or used, and is implemented as a null
 --    procedure. Use of this storage pool means that there is no need for
---    calls to Ada.Unchecked_Deallocation.
+--    calls to Ada.Unchecked_Deallocation (as it has no effect).
 --
 --    The strategy is to provide an efficient storage pool that allocates
 --    objects quickly with minimal overhead, and very fast dealloction.
@@ -217,7 +217,8 @@ package Dynamic_Pools is
    --  NOTE: You will likely need to suppress Accessibility_Checks in
    --  order to successfully call this subprogram.
 
-   overriding function Storage_Size
+   overriding
+   function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count;
    --  Indicates the current amount of storage allocated from the pool
    --  and its subpools, including storage that is allocated but not used.
@@ -250,9 +251,13 @@ package Dynamic_Pools is
    procedure Set_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task)
-   with Pre => (Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
-                or else (Is_Owner (Subpool) and then T = Null_Task_Id),
-        Post => Is_Owner (Subpool, T);
+     with
+       Pre => (Is_Owner (Subpool, Current_Task)
+               or else (Is_Owner (Subpool, Null_Task_Id)
+                 and then (T = Current_Task or else T = Null_Task_Id)))
+               or else ((Is_Owner (Subpool) and then T = Null_Task_Id)),
+       Post => Is_Owner (Subpool, T);
+
    --  An Owning task can relinquish ownership of a subpool by setting the
    --  owner to a Null_Task_Id. Another task may obtain ownership of a subpool,
    --  provided that the subpool has no owner.
@@ -271,6 +276,24 @@ package Dynamic_Pools is
    --  Storage_Error if Pool.Default_Block_Size is zero. The default
    --  subpool is used when Ada's "new" operator is used without specifying
    --  a subpool handle.
+
+   function Has_Default_Subpool
+     (Pool : Dynamic_Pool) return Boolean;
+   --  Returns True if Pool currently has a default subpool, False otherwise
+
+   use type Storage_Elements.Storage_Count;
+
+   procedure Create_Default_Subpool
+     (Pool : in out Dynamic_Pool)
+     with Pre => (not Pool.Has_Default_Subpool and then
+                    Pool.Default_Block_Size > 0),
+     Post => (Pool.Has_Default_Subpool);
+   --  May be used to reinstate a default subpool if the default subpool has
+   --  been deallocated.
+   --  The task calling Create_Default_Subpool initially "owns" the subpool.
+   --  Uses the Default_Block_Size of the Pool when more storage is needed,
+   --  except if Pool.Default_Block_Size is zero, then the
+   --  Default_Allocation_Block_Size value is used.
 
    generic
       type Allocation_Type is private;
@@ -321,7 +344,6 @@ private
       procedure Delete (Subpool : in out Dynamic_Subpool_Access);
       function Storage_Usage return Storage_Elements.Storage_Count;
       function Storage_Total return Storage_Elements.Storage_Count;
-      function Get_Subpools_For_Finalization  return Subpool_Vector.Vector;
 
    private
       Subpools : Subpool_Vector.Vector;
@@ -350,8 +372,6 @@ private
       Default_Subpool : Subpool_Handle;
       Subpools : Subpool_Set;
    end record;
-
-   use type Storage_Elements.Storage_Count;
 
    overriding
    procedure Allocate
@@ -388,20 +408,27 @@ private
    --  Create the default subpool if Pool.Default_Block_Size is non-zero
 
    overriding
-   procedure Finalize   (Pool : in out Dynamic_Pool);
+   procedure Finalize   (Pool : in out Dynamic_Pool) is null;
 
    overriding
    function Default_Subpool_For_Pool
      (Pool : in out Dynamic_Pool) return not null Subpool_Handle
    is (Pool.Default_Subpool);
 
-   overriding function Storage_Size
+   overriding
+   function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
    is (Pool.Subpools.Storage_Total);
 
    function Storage_Used
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
    is (Pool.Subpools.Storage_Usage);
+
+   use type Subpool_Handle;
+
+   function Has_Default_Subpool
+     (Pool : Dynamic_Pool) return Boolean is
+      (Pool.Default_Subpool /= null);
 
    pragma Inline
      (Allocate, Default_Subpool_for_Pool,

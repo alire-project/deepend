@@ -210,6 +210,14 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
+   procedure Create_Default_Subpool
+     (Pool : in out Dynamic_Pool) is
+   begin
+      Pool.Default_Subpool := Pool.Create_Subpool;
+   end Create_Default_Subpool;
+
+   --------------------------------------------------------------
+
    overriding
    function Create_Subpool
      (Pool : not null access Dynamic_Pool) return not null Subpool_Handle is
@@ -302,10 +310,7 @@ package body Dynamic_Pools is
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
       then
-
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool'Access,
-                           Block_Size => Pool.Default_Block_Size);
+         Pool.Default_Subpool := null;
       end if;
 
       Free_Subpool (The_Subpool);
@@ -329,6 +334,16 @@ package body Dynamic_Pools is
    begin
       Pool.Subpools.Deallocate_All;
    end Finalize;
+
+   --------------------------------------------------------------
+
+   function Has_Default_Subpool
+     (Pool : Dynamic_Pool) return Boolean
+   is
+      use type Subpool_Handle;
+   begin
+      return (Pool.Default_Subpool /= null);
+   end Has_Default_Subpool;
 
    --------------------------------------------------------------
 

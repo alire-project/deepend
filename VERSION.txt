@@ -1,5 +1,23 @@
 Deepend Version History.
 
+deepend-3.5 (Current Version)
+- The Ada 2012 dynamic pool and bounded dynamic pool libraries were broken
+  with GNAT GPL 2016. Changes were made to get these working again.
+- One problem seemed to be that there are issues auto-allocating a default
+  subpool, during the process of deleting the current default subpool.
+  To address this, auto-recreation of the default subpool is no longer
+  supported. When the default subpool is deallocated, you can no longer
+  allocate to the default subpool, until making a call to a new subprogram,
+  Create_Default_Subpool, which reinstates a default subpool.
+- Some of the make files were failing also, due to containing a build option
+  that either is no longer supported, or requires special configuration.
+  This callgraph compile option was removed, allowing the make to build 
+  successfully.
+- Removed temporary hack code relating to the default subpool, due to bugs
+  in GNAT which were not recognizing allocations to the default subpool.
+  These issues are fixed in GNAT GPL 2016, so the temporary hack code was
+  removed, and default subpools work as expected. 
+
 deepend-3.4 (Current Version)
 - Fixed issues preventing compilation of Ada 2012 version for 
   GNAT GPL 2014

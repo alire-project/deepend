@@ -212,7 +212,11 @@ begin
 
       Put_Line ("Deallocating Subpool...");
 
+      pragma Warnings (Off, "*Sub_Pool* modified* but* never referenced*");
+
       Bounded_Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
+
+      pragma Warnings (On, "*Sub_Pool* modified* but* never referenced*");
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
@@ -246,7 +250,7 @@ begin
 
       Put_Line ("Deallocating Subpool...");
 
-      --  Bounded_Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
+      --  Bounded_Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool.Handle);
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
@@ -325,6 +329,9 @@ begin
 
    Deallocate_Default_Subpool;
 
+   --  Reinstate another default subpool
+   Pool.Create_Default_Subpool;
+
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
@@ -358,12 +365,6 @@ begin
 
    Deallocate_Default_Subpool;
 
-   Put_Line
-     ("Bytes Stored in Default Subpool=" &
-        Storage_Elements.Storage_Count'Image
-        (Bounded_Dynamic_Pools.Storage_Used
-           (Subpool => Pool.Default_Subpool_For_Pool)));
-
    Put_Line ("At this point, the nodes and their descriptions still exist,");
    Put_Line ("because their subpools still exist, however the node names");
    Put_Line ("shouldn't exist, because the default subpool had been freed.");
@@ -382,5 +383,4 @@ begin
    New_Line;
    Put_Line ("Successful Completion");
    New_Line;
-
 end Test_Bounded_Dynamic_Pools_Ada2012;

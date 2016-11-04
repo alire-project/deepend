@@ -215,7 +215,9 @@ begin
 
       Put_Line ("Deallocating Subpool...");
 
+      pragma Warnings (Off, "*Sub_Pool* modified* but* never referenced*");
       Dynamic_Pools.Unchecked_Deallocate_Subpool (Sub_Pool);
+      pragma Warnings (On, "*Sub_Pool* modified* but* never referenced*");
 
       Put_Line ("Object Count=" & Natural'Image (Object_Count));
       Put_Line ("Bytes Stored=" &
@@ -315,6 +317,9 @@ begin
 
    Deallocate_Default_Subpool;
 
+   --  Reinstate a default subpool
+   Pool.Create_Default_Subpool;
+
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
@@ -348,6 +353,8 @@ begin
 
    Deallocate_Default_Subpool;
 
+   --  Reinstate a default subpool
+   Pool.Create_Default_Subpool;
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image

@@ -207,6 +207,9 @@ begin
 
    Deallocate_Default_Subpool;
 
+   --  Reinstate a default subpool;
+   Pool.Create_Default_Subpool;
+
    Put_Line
      ("Bytes Stored in Default Subpool=" &
         Storage_Elements.Storage_Count'Image
@@ -237,6 +240,9 @@ begin
    Put_Line ("Deallocating Default Subpool again");
 
    Deallocate_Default_Subpool;
+
+   --  Reinstate a default subpool
+   Pool.Create_Default_Subpool;
 
    Put_Line
      ("Bytes Stored in Default Subpool=" &

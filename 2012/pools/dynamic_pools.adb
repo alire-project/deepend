@@ -63,18 +63,14 @@ package body Dynamic_Pools is
         (Subpool : in out Dynamic_Subpool_Access)
       is
          Position : Subpool_Vector.Cursor := Subpools.Find (Subpool);
+         use type Subpool_Vector.Cursor;
       begin
-         pragma Warnings (Off, "*Position*modified*but*never referenced*");
-         Subpools.Delete (Position);
-         pragma Warnings (On, "*Position*modified*but*never referenced*");
+
+         if Position /= Subpool_Vector.No_Element then
+            Subpools.Delete (Position);
+         end if;
+
       end Delete;
-
-      --------------------------------------------------------------
-
-      function Get_Subpools_For_Finalization return Subpool_Vector.Vector is
-      begin
-         return Subpools;
-      end Get_Subpools_For_Finalization;
 
       --------------------------------------------------------------
 
@@ -113,9 +109,7 @@ package body Dynamic_Pools is
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count)
-   is
-      use type Storage_Pools.Subpools.Subpool_Handle;
+      Alignment : Storage_Elements.Storage_Count) is
    begin
       Pool.Allocate_From_Subpool
         (Storage_Address,
@@ -174,6 +168,7 @@ package body Dynamic_Pools is
       function Convert is new Ada.Unchecked_Conversion
         (Source => System.Address,
          Target => Allocation_Type_Access);
+
    begin
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
@@ -185,6 +180,14 @@ package body Dynamic_Pools is
 
       return Convert (Location);
    end Allocation;
+
+   --------------------------------------------------------------
+
+   procedure Create_Default_Subpool
+     (Pool : in out Dynamic_Pool) is
+   begin
+      Pool.Default_Subpool := Pool.Create_Subpool;
+   end Create_Default_Subpool;
 
    --------------------------------------------------------------
 
@@ -256,8 +259,6 @@ package body Dynamic_Pools is
    is
       The_Subpool : Dynamic_Subpool_Access
         := Dynamic_Subpool (Subpool.all)'Access;
-
-      use type Storage_Pools.Subpools.Subpool_Handle;
    begin
 
       --  Only removes the access value from the Subpools container
@@ -281,46 +282,12 @@ package body Dynamic_Pools is
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
       then
-
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool,
-                           Block_Size => Pool.Default_Block_Size);
+         Pool.Default_Subpool := null;
       end if;
 
       Free_Subpool (The_Subpool);
 
    end Deallocate_Subpool;
-
-   --------------------------------------------------------------
-
-   overriding
-   procedure Finalize   (Pool : in out Dynamic_Pool)
-   is
-      --  Okay to get an unprotected copy of the subpool list here,
-      --  since we are now finalizing the pool, and no other tasks should
-      --  still be messing with the pool
-      Subpools : constant Subpool_Vector.Vector :=
-        Pool.Subpools.Get_Subpools_For_Finalization;
-   begin
-
-      for E in Subpools.Iterate loop
-         declare
-            Subpool : Subpool_Handle :=
-              Subpool_Handle (Dynamic_Subpool_Access'(Subpools (E)));
-         begin
-
-            pragma Warnings
-              (Off, "*Subpool*modified*but*never referenced*");
-
-            Unchecked_Deallocate_Subpool (Subpool);
-
-            pragma Warnings
-              (On, "*Subpool*modified*but*never referenced*");
-
-         end;
-
-      end loop;
-   end Finalize;
 
    --------------------------------------------------------------
 

@@ -203,6 +203,14 @@ package body Bounded_Dynamic_Pools is
 
    --------------------------------------------------------------
 
+   procedure Create_Default_Subpool
+     (Pool : in out Dynamic_Pool) is
+   begin
+      Pool.Default_Subpool := Create_Subpool (Pool'Access);
+   end Create_Default_Subpool;
+
+   --------------------------------------------------------------
+
    function Create_Subpool
      (Pool : access Dynamic_Pool) return Subpool_Handle is
    begin
@@ -268,9 +276,7 @@ package body Bounded_Dynamic_Pools is
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
       if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
       then
-         Pool.Default_Subpool :=
-           Create_Subpool (Pool'Access,
-                           Size => Pool.Default_Subpool_Size);
+         Pool.Default_Subpool := null;
       end if;
 
       if The_Subpool.Reusable then
@@ -289,6 +295,16 @@ package body Bounded_Dynamic_Pools is
    begin
       return Pool.Default_Subpool;
    end Default_Subpool_For_Pool;
+
+   --------------------------------------------------------------
+
+   function Has_Default_Subpool
+     (Pool : Dynamic_Pool) return Boolean
+   is
+      use type Subpool_Handle;
+   begin
+      return (Pool.Default_Subpool /= null);
+   end Has_Default_Subpool;
 
    --------------------------------------------------------------
 
