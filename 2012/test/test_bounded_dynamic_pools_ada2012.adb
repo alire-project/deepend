@@ -12,7 +12,8 @@ with Ada.Finalization;
 procedure Test_Bounded_Dynamic_Pools_Ada2012
 is
 
-   Pool : Bounded_Dynamic_Pools.Dynamic_Pool;
+   Pool : Bounded_Dynamic_Pools.Dynamic_Pool (Default_Subpool_Size => 1000,
+                                              Maximum_Subpools => 100);
    pragma Default_Storage_Pool (Pool);
 
    subtype Id_String is String (1 .. 10);
@@ -364,6 +365,15 @@ begin
    Put_Line ("Deallocating Default Subpool again");
 
    Deallocate_Default_Subpool;
+
+   --  Reinstate another default subpool
+   Pool.Create_Default_Subpool;
+
+   Put_Line
+     ("Bytes Stored in Default Subpool=" &
+        Storage_Elements.Storage_Count'Image
+        (Bounded_Dynamic_Pools.Storage_Used
+           (Subpool => Pool.Default_Subpool_For_Pool)));
 
    Put_Line ("At this point, the nodes and their descriptions still exist,");
    Put_Line ("because their subpools still exist, however the node names");

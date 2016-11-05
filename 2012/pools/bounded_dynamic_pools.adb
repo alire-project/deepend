@@ -31,26 +31,30 @@ with Ada.Unchecked_Deallocation;
 with Ada.Unchecked_Conversion;
 
 package body Bounded_Dynamic_Pools is
-
-   function Storage_Size
-     (Subpool : not null Dynamic_Subpool_Access)
-      return Storage_Elements.Storage_Count is
-    (Subpool.Size);
-
-   function Storage_Used
-     (Subpool : not null Dynamic_Subpool_Access)
-      return Storage_Elements.Storage_Count is
-    (Subpool.Next_Allocation - 1);
-
    procedure Free_Subpool is new Ada.Unchecked_Deallocation
      (Object => Dynamic_Subpool,
       Name => Dynamic_Subpool_Access);
 
+   function Storage_Size
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count is
+     (Subpool.Size);
+
+   function Storage_Used
+     (Subpool : not null Dynamic_Subpool_Access)
+      return Storage_Elements.Storage_Count is
+     (Subpool.Next_Allocation - 1);
+
    protected body Subpool_Set is
 
-      procedure Add (Subpool : Dynamic_Subpool_Access)
-      is
-         use type Containers.Count_Type;
+      function Active_Subpools return Containers.Count_Type is
+      begin
+         return Count;
+      end Active_Subpools;
+
+      --------------------------------------------------------------
+
+      procedure Add (Subpool : Dynamic_Subpool_Access) is
       begin
          Count := Count + 1;
          Subpools (Count) := Subpool;
@@ -61,7 +65,6 @@ package body Bounded_Dynamic_Pools is
       procedure Delete (Subpool : Dynamic_Subpool_Access)
       is
          Position : Containers.Count_Type := 0;
-         use type Containers.Count_Type;
       begin
          for I in Subpools'Range loop
             if Subpools (I) = Subpool then
@@ -135,7 +138,6 @@ package body Bounded_Dynamic_Pools is
       Subpool : not null Subpool_Handle)
    is
       pragma Unreferenced (Alignment, Pool);
-      use type Ada.Containers.Count_Type;
       Sub : Dynamic_Subpool renames Dynamic_Subpool (Subpool.all);
    begin
 
@@ -176,7 +178,7 @@ package body Bounded_Dynamic_Pools is
    procedure Create_Default_Subpool
      (Pool : in out Dynamic_Pool) is
    begin
-      Pool.Default_Subpool := Pool.Create_Subpool;
+      Pool.Default_Subpool := Dynamic_Subpool (Pool.Create_Subpool.all)'Access;
    end Create_Default_Subpool;
 
    --------------------------------------------------------------
@@ -294,15 +296,16 @@ package body Bounded_Dynamic_Pools is
       --  reference to above
       Pool.Subpools.Delete (The_Subpool);
 
-      The_Subpool.Next_Allocation := 1;
-
       --  Handle case when deallocating the default pool
       --  Should only occur if client attempts to obtain the default
       --  subpool, then calls Unchecked_Deallocate_Subpool on that object
-      if Pool.Default_Subpool /= null and then Subpool = Pool.Default_Subpool
+      if Pool.Default_Subpool /= null and then
+        The_Subpool = Pool.Default_Subpool
       then
          Pool.Default_Subpool := null;
       end if;
+
+      The_Subpool.Next_Allocation := 1;
 
       if The_Subpool.Reusable then
          The_Subpool.Reclaimed := True;
@@ -336,7 +339,9 @@ package body Bounded_Dynamic_Pools is
    begin
       Pool.Default_Subpool :=
         (if Pool.Default_Subpool_Size > 0
-         then Pool.Create_Subpool else null);
+         then Dynamic_Subpool (Pool.Create_Subpool.all)'Access else null);
+
+      Pool.Owner := Ada.Task_Identification.Current_Task;
    end Initialize;
 
    --------------------------------------------------------------
@@ -372,12 +377,12 @@ package body Bounded_Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Is_Owner
-     (Subpool : not null Subpool_Handle;
-      T : Task_Id := Current_Task) return Boolean is
+   procedure Set_Owner
+     (Pool : in out Dynamic_Pool;
+      T : Task_Id := Current_Task) is
    begin
-      return (Dynamic_Subpool (Subpool.all).Owner = T);
-   end Is_Owner;
+      Pool.Owner := T;
+   end Set_Owner;
 
    --------------------------------------------------------------
 

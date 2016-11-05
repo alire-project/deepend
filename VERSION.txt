@@ -9,6 +9,9 @@ deepend-3.5 (Current Version)
   supported. When the default subpool is deallocated, you can no longer
   allocate to the default subpool, until making a call to a new subprogram,
   Create_Default_Subpool, which reinstates a default subpool.
+- Added ability to set ownership of the storage pool. (Before ownership could
+  only set on subpools. This is particularly important for allocations to the
+  default storage pool.
 - Some of the make files were failing also, due to containing a build option
   that either is no longer supported, or requires special configuration.
   This callgraph compile option was removed, allowing the make to build 
@@ -16,9 +19,10 @@ deepend-3.5 (Current Version)
 - Removed temporary hack code relating to the default subpool, due to bugs
   in GNAT which were not recognizing allocations to the default subpool.
   These issues are fixed in GNAT GPL 2016, so the temporary hack code was
-  removed, and default subpools work as expected. 
+  removed, and default subpools work as expected.
+- Improved documentation comments in package specifications
 
-deepend-3.4 (Current Version)
+deepend-3.4
 - Fixed issues preventing compilation of Ada 2012 version for 
   GNAT GPL 2014
 - The Pool parameter of the 
