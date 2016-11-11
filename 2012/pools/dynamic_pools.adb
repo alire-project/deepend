@@ -316,6 +316,8 @@ package body Dynamic_Pools is
    begin
       Pool.Default_Subpool :=
         (if Pool.Default_Block_Size > 0 then Pool.Create_Subpool else null);
+
+      Pool.Owner := Ada.Task_Identification.Current_Task;
    end Initialize;
 
    --------------------------------------------------------------
@@ -351,12 +353,12 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Is_Owner
-     (Subpool : not null Subpool_Handle;
-      T : Task_Id := Current_Task) return Boolean is
+   procedure Set_Owner
+     (Pool : in out Dynamic_Pool;
+      T : Task_Id := Current_Task) is
    begin
-      return (Dynamic_Subpool (Subpool.all).Owner = T);
-   end Is_Owner;
+      Pool.Owner := T;
+   end Set_Owner;
 
    --------------------------------------------------------------
 

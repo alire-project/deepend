@@ -29,7 +29,7 @@ package Sys.Storage_Pools.Subpools is
    --  the subpool within the program.
 
    function Create_Subpool
-     (Pool : access Root_Storage_Pool_With_Subpools)
+     (Pool : not null access Root_Storage_Pool_With_Subpools)
       return not null Subpool_Handle is abstract;
    --  Create subpool within given storage pool.
    --  NOTE: Additional functions that create subpools may be
