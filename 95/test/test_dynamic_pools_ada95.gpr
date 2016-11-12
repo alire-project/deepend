@@ -11,7 +11,7 @@ project Test_Dynamic_Pools_Ada95 is
    end Builder;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnat95", "-gnatwc.cfjklm.op.pr.rtu.wx.x", "-gnatyaAbcefhiIklmprStux");
+      for Default_Switches ("ada") use ("-gnatVa", "-gnatf", "-g", "-gnata", "-gnatwc.cfjklm.op.pr.rtu.wx.x", "-gnatyaAbcefhiIklmprStux", "-gnat95");
    end Compiler;
 
    package Linker is

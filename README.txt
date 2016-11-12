@@ -158,6 +158,10 @@ There are 4 Storage Pool packages to choose from in Deepend.
 4.0 BUILD INSTRUCTIONS 
 ======================
 
+   -----------------------------------------------------------------
+   -- Irvine ICC Ada 2005 Compiler ---------------------------------
+   -----------------------------------------------------------------
+
 - For the Irvine ICC Ada 2005 compiler on  Windows, execute the 
   following script to create the Ada 2005 versions of the executables;
 
@@ -196,6 +200,17 @@ There are 4 Storage Pool packages to choose from in Deepend.
   i.e.
       -compile_flags='"-predef=(f32,lf64) -opt -debug -nochecks"'    
 
+   -----------------------------------------------------------------
+   -- ObjectAda Ada 2005 and Ada 95 --------------------------------
+   -----------------------------------------------------------------
+
+Load the appropriate .PRJ file from either the 95, or 2005 sub-folder into
+the ObjectAda IDE, and build the executable from within the IDE.
+
+   -----------------------------------------------------------------
+   -- GNAT GPL, FSF, or PRO ------- --------------------------------
+   -----------------------------------------------------------------
+
 - For GNAT Pro, GNAT GPL or GNAT AUX, load the appropriate .gpr file 
   from either the 95, 2005, or 2012 sub-folder into the GPS ide, and build
   the executable from within the ide, or alternatively use gnatmake to 
@@ -211,9 +226,20 @@ There are 4 Storage Pool packages to choose from in Deepend.
 
 Deepend has been ported to the following compilers and platforms.
 
-   GNAT GPL 2010-2016  (Windows, Linux, MAC)  Ada95, Ada2005, Ada2012
    Irvine Ada 2005     (Windows)  Ada95, Ada2005
-   GNAT AUX FSF 4.6.1-4.9.4  (Android, Rasperry Pi)  Ada95, Ada2005, Ada2012
+   ObjectAda64 v9.2    (Windows)  Ada95, Ada2005
+   GNAT GPL 2010-2016  (Windows, Linux, Mac OSX - El Capitan) Ada95, Ada2005, Ada2012
+   GNAT FSF 4.6.1-5.2.0  (Linux, Android, Rasperry Pi)  Ada95, Ada2005, Ada2012
+
+Note: For GNAT FSF, there are problems building some of the Ada 2012 libraries
+for versions of GCC up to 4.9.2 or thereabouts. Specifically, the Dynamic_Pools,
+and Bounded_Dynamic_Pools have compiler bugs and do not compile, however, the
+Basic_Bounded_Dynamic_Pool and Basic_Dynamic_Pool libraries to compile.
+These bugs appear to be fixed in FSF GCC 5.2.0, and all compiles.
+For the Raspberry pi, the latest NOOBs build is based on GCC 4.9.2, which
+present the same issues. It is similarly suspected that installing a later
+version of GCC on the Raspberry PI, such as FSF GCC 5.2.0, would correct these
+issues.
 
 Deepend is intended to be portable to any platform that supports 
 Ada95, Ada 2005 or Ada 2012 compilation, and in theory, any Ada95, 
