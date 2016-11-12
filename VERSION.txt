@@ -1,6 +1,16 @@
 Deepend Version History.
 
-deepend-3.5 (Current Version)
+deepend-3.5.1 (Current Version)
+- Support for ObjectAda64 (9.2) for both Ada 2005 and Ada 95
+- Added ObjectAda .PRJ files to build all the test executables associated with
+  the Ada 95 and Ada 2005 libraries.
+- Fixed compile issue detected by the ObjectAda compiler, and missed by GNAT
+  where an overriding subprogram was not fully conformant to the parameter
+  profile of the subprogram it was overriding. Specifically, the derived
+  subprogram added a null exclusion ("non null) to an access parameter, whereas
+  the parent subprogram did not have the null exclusion for that parameter." 
+
+deepend-3.5
 - The Ada 2012 dynamic pool and bounded dynamic pool libraries were broken
   with GNAT GPL 2016. Changes were made to get these working again.
 - One problem seemed to be that there are issues auto-allocating a default
