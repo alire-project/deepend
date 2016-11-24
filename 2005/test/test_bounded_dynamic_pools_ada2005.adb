@@ -12,7 +12,7 @@ is
         Bounded_Dynamic_Pools.Default_Maximum_Subpool_Count);
 
    subtype Id_String is String (1 .. 10);
-   type Id_String_Access is access Id_String;
+   type Id_String_Access is access all Id_String;
    for Id_String_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (Id_String_Access);
 
@@ -26,7 +26,7 @@ is
       Next : access Node_Type;
    end record;
 
-   type Node_Access is access Node_Type;
+   type Node_Access is access all Node_Type;
    for Node_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (Node_Access);
 
@@ -39,7 +39,7 @@ is
          Value : Integer;
       end record;
 
-   type O_Access is access Ordinary_Type;
+   type O_Access is access all Ordinary_Type;
    for O_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (O_Access);
 

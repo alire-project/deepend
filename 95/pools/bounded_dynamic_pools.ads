@@ -319,7 +319,7 @@ package Bounded_Dynamic_Pools is
 
    generic
       type Allocation_Type is private;
-      type Allocation_Type_Access is access Allocation_Type;
+      type Allocation_Type_Access is access all Allocation_Type;
    function Allocation
      (Subpool : Subpool_Handle) return Allocation_Type_Access;
    --  This generic routine provides a mechanism to allocate an object of
@@ -327,7 +327,7 @@ package Bounded_Dynamic_Pools is
 
    generic
       type Allocation_Type is private;
-      type Allocation_Type_Access is access Allocation_Type;
+      type Allocation_Type_Access is access all Allocation_Type;
    function Initialized_Allocation
      (Subpool : Subpool_Handle;
       Qualified_Expression : Allocation_Type) return Allocation_Type_Access;

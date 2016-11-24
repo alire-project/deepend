@@ -1,6 +1,23 @@
 Deepend Version History.
 
-deepend-3.5.1 (Current Version)
+deepend-3.6 (Current Version)
+- Improved portability and safety by replacing usage of Ada.Unchecked_Conversion
+  with System.Address_To_Access_Conversions in the Bounded_Dynamic_Pool and the
+  Dynamic_Pool libraries. In particular, the Janus Ada compiler
+  complained, rightfully so, since access types and System.Address are
+  different sizes, and Unchecked_Conversion is dangerous in such context. As
+  a result of this change, GNAT pointed out a bunch of other errors having to
+  do with using access types when general access types should have been used
+  instead. These changes were made to the Bounded_Dynamic_Pools library and the
+  Dynamic_Pools library, which in turn required changes to the client code to
+  use general access types. (i.e. access types with the "all" keyword as in; 
+  type xxx is access all type).
+- The Janus Ada compiler also pointed out an issue in the Ada 95 test code
+  where a generic access type could not be automatically converted to a
+  non-generic access type of the same name. This was fixed the the tree creation
+  test code.
+  
+deepend-3.5.1
 - Support for ObjectAda64 (9.2) for both Ada 2005 and Ada 95
 - Added ObjectAda .PRJ files to build all the test executables associated with
   the Ada 95 and Ada 2005 libraries.

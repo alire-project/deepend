@@ -77,7 +77,7 @@ pragma Restrictions (No_Delay);
 pragma Restrictions (No_Dynamic_Priorities);
 pragma Restrictions (No_Entry_Queue);
 --  pragma Restrictions (No_Implicit_Heap_Allocations);
-pragma Restrictions (No_Local_Protected_Objects);
+--  pragma Restrictions (No_Local_Protected_Objects);
 pragma Restrictions (No_Protected_Type_Allocators);
 pragma Restrictions (No_Relative_Delay);
 pragma Restrictions (No_Requeue_Statements);

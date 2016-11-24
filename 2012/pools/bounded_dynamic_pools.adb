@@ -28,7 +28,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
-with Ada.Unchecked_Conversion;
+with System.Address_To_Access_Conversions;
 
 package body Bounded_Dynamic_Pools is
    procedure Free_Subpool is new Ada.Unchecked_Deallocation
@@ -156,11 +156,10 @@ package body Bounded_Dynamic_Pools is
    function Allocation
      (Subpool : Subpool_Handle) return Allocation_Type_Access
    is
-      Location : System.Address;
+      package Subpool_Handle_Conversions is new
+        Address_To_Access_Conversions (Object => Allocation_Type);
 
-      function Convert is new Ada.Unchecked_Conversion
-        (Source => System.Address,
-         Target => Allocation_Type_Access);
+      Location : System.Address;
    begin
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
@@ -170,7 +169,9 @@ package body Bounded_Dynamic_Pools is
          Alignment => Allocation_Type'Alignment,
          Subpool => Subpool);
 
-      return Convert (Location);
+      return Allocation_Type_Access'
+        (Subpool_Handle_Conversions.To_Pointer
+           (Location).all'Unchecked_Access);
    end Allocation;
 
    --------------------------------------------------------------
@@ -351,11 +352,10 @@ package body Bounded_Dynamic_Pools is
       Qualified_Expression : Allocation_Type)
       return Allocation_Type_Access
    is
-      Location : System.Address;
+      package Subpool_Handle_Conversions is new
+        Address_To_Access_Conversions (Object => Allocation_Type);
 
-      function Convert is new Ada.Unchecked_Conversion
-        (Source => System.Address,
-         Target => Allocation_Type_Access);
+      Location : System.Address;
    begin
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
@@ -367,7 +367,10 @@ package body Bounded_Dynamic_Pools is
          Subpool => Subpool);
 
       declare
-         Result : constant Allocation_Type_Access := Convert (Location);
+         Result : constant Allocation_Type_Access :=
+           Allocation_Type_Access'
+             (Subpool_Handle_Conversions.To_Pointer
+                (Location).all'Unchecked_Access);
       begin
          Result.all := Qualified_Expression;
          return Result;

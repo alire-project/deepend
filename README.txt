@@ -291,15 +291,15 @@ pool. There are Ada 95, Ada 2005, and Ada 2012 versions of this test driver.
 In addition, there are binary_trees test executables with two different
 implementations of a benchmark test, for Ada 95,  Ada 2005 and Ada 2012.
     - the implementations (bounded and unbounded) under the folder;
-        binary_tree_benchmark_using_access_types_with_dedicated_pools
+          nosubpools
       performs all allocations using the new operator and relies on
       Ada's access type finalization to release all objects from the
       subpool. This test utilizes the Basic_Dynamic_Pools package,
       and has been found to give the best test results for this
       benchmark in Ada 95, Ada 2005 and Ada 2012 
     - the implementations (bounded and unbounded) under the folder;
-       binary_tree_benchmark_using_subpool_deallocations performs all
-       allocations using the Ada 2012 subpool allocator syntax,
+           subpools
+	   performs all allocations using the Ada 2012 subpool allocator syntax,
        or Deepend's Allocate generic for Ada 2005, rather than using
        the traditional "new" operator with Ada 83 syntax.
 

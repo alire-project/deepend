@@ -28,7 +28,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
-with Ada.Unchecked_Conversion;
+with System.Address_To_Access_Conversions;
 
 package body Dynamic_Pools is
 
@@ -163,12 +163,10 @@ package body Dynamic_Pools is
    function Allocation
      (Subpool : Subpool_Handle) return Allocation_Type_Access
    is
+      package Subpool_Handle_Conversions is new
+        Address_To_Access_Conversions (Object => Allocation_Type);
+
       Location : System.Address;
-
-      function Convert is new Ada.Unchecked_Conversion
-        (Source => System.Address,
-         Target => Allocation_Type_Access);
-
    begin
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
@@ -178,7 +176,9 @@ package body Dynamic_Pools is
          Alignment => Allocation_Type'Alignment,
          Subpool => Subpool);
 
-      return Convert (Location);
+      return Allocation_Type_Access'
+        (Subpool_Handle_Conversions.To_Pointer
+           (Location).all'Unchecked_Access);
    end Allocation;
 
    --------------------------------------------------------------
@@ -327,11 +327,10 @@ package body Dynamic_Pools is
       Qualified_Expression : Allocation_Type)
       return Allocation_Type_Access
    is
-      Location : System.Address;
+      package Subpool_Handle_Conversions is new
+        Address_To_Access_Conversions (Object => Allocation_Type);
 
-      function Convert is new Ada.Unchecked_Conversion
-        (Source => System.Address,
-         Target => Allocation_Type_Access);
+      Location : System.Address;
    begin
 
       Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).Allocate_From_Subpool
@@ -343,7 +342,10 @@ package body Dynamic_Pools is
          Subpool => Subpool);
 
       declare
-         Result : constant Allocation_Type_Access := Convert (Location);
+         Result : constant Allocation_Type_Access :=
+           Allocation_Type_Access'
+             (Subpool_Handle_Conversions.To_Pointer
+                (Location).all'Unchecked_Access);
       begin
          Result.all := Qualified_Expression;
          return Result;

@@ -9,14 +9,14 @@ is
      (Default_Block_Size => Dynamic_Pools.Default_Allocation_Block_Size);
 
    subtype Id_String is String (1 .. 10);
-   type Id_String_Access is access Id_String;
+   type Id_String_Access is access all Id_String;
    for Id_String_Access'Storage_Pool use Pool;
 
    type String_Access is access all String;
    for String_Access'Storage_Pool use Pool;
 
    type Node_Type;
-   type Node_Access is access Node_Type;
+   type Node_Access is access all Node_Type;
    for Node_Access'Storage_Pool use Pool;
 
    type Node_Type is record
@@ -35,7 +35,7 @@ is
          Value : Integer;
       end record;
 
-   type O_Access is access Ordinary_Type;
+   type O_Access is access all Ordinary_Type;
    for O_Access'Storage_Pool use Pool;
 
    function New_Ordinary_Type is new Dynamic_Pools.Allocation
