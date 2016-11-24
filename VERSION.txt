@@ -16,6 +16,9 @@ deepend-3.6 (Current Version)
   where a generic access type could not be automatically converted to a
   non-generic access type of the same name. This was fixed the the tree creation
   test code.
+- Removed Restriction No_Local_Protected_Object which is valid, and somehow
+  became detectable once Unchecked_Conversion usage was removed.
+- Shortened horrendously long folder names under the test folder
   
 deepend-3.5.1
 - Support for ObjectAda64 (9.2) for both Ada 2005 and Ada 95
