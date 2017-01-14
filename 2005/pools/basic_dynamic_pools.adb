@@ -76,7 +76,6 @@ package body Basic_Dynamic_Pools is
 
       Storage_Address := Pool.Active (Pool.Next_Allocation)'Address;
       Pool.Next_Allocation := Pool.Next_Allocation + Size_In_Storage_Elements;
-
    end Allocate;
 
    --------------------------------------------------------------

@@ -1,6 +1,25 @@
 Deepend Version History.
 
-deepend-3.6 (Current Version)
+deepend-3.7 (Current Version)
+- An issue was reported that allocations using the generic allocators,
+  (Allocation and Scoped_Allocation) do not initialize memory, which is 
+  not consistent with how Ada allocators work. In particular, allocating
+  an object of a type should have its discriminants set to the value of
+  the designated subtype, and any default initializers should have been
+  applied. To remedy this, these calls were removed, and instead, the 
+  two other generic calls, Initialized_Allocation, and
+  Scoped_Initialized_Allocation were moved to a nested package and 
+  both renamed to Allocate, and the Value parameter (previously called the
+  Qualified_Expression parameter) is now supplied with a default that is
+  a value of the generic formal type that is default initialized.
+  These changes were applied to the Ada 95, Ada 2005, and Ada 2012 versions
+  of the libraries. Prior to this release, the calls worked as expected
+  so long as the users code initialized the allocations to a valid 
+  object value, prior to use. Now the allocations of these subprograms
+  should work consistent with the "new" keyword allocations for
+  uninitialized allocations.
+  
+deepend-3.6
 - Improved portability and safety by replacing usage of Ada.Unchecked_Conversion
   with System.Address_To_Access_Conversions in the Bounded_Dynamic_Pool and the
   Dynamic_Pool libraries. In particular, the Janus Ada compiler

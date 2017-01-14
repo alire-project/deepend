@@ -315,24 +315,6 @@ package Dynamic_Pools is
    --  except if Pool.Default_Block_Size is zero, then the
    --  Default_Allocation_Block_Size value is used.
 
-   generic
-      type Allocation_Type is private;
-      type Allocation_Type_Access is access all Allocation_Type;
-   function Allocation
-     (Subpool : Subpool_Handle) return Allocation_Type_Access;
-   --  This generic routine provides a mechanism to allocate an object of
-   --  a definite subtype from a specific subpool.
-
-   generic
-      type Allocation_Type is private;
-      type Allocation_Type_Access is access all Allocation_Type;
-   function Initialized_Allocation
-     (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
-   --  This generic routine provides a mechanism to allocate an object of
-   --  a definite subtype from a specific subpool, and initializing the
-   --  new object with a specific value.
-
    type Scoped_Subpool
      (Pool : access Dynamic_Pool;
       Block_Size : Storage_Elements.Storage_Count) is tagged limited private;
@@ -344,6 +326,33 @@ package Dynamic_Pools is
 
    function Handle
      (Subpool : Scoped_Subpool) return Subpool_Handle;
+
+   generic
+      type Allocation_Type is private;
+      type Allocation_Type_Access is access all Allocation_Type;
+   package Subpool_Allocators is
+
+      function Default_Value return Allocation_Type;
+
+      function Allocate
+        (Subpool : Subpool_Handle;
+         Value   : Allocation_Type := Default_Value)
+         return Allocation_Type_Access;
+      --  This generic routine provides a mechanism to allocate an object of
+      --  a definite subtype from a specific subpool, and initializing the
+      --  new object with a specific value.
+
+      function Allocate
+        (Subpool : Scoped_Subpool;
+         Value   : Allocation_Type := Default_Value)
+         return Allocation_Type_Access;
+      --  This generic routine provides a mechanism to allocate an object of
+      --  a definite subtype from a specific scoped subpool, and initializing
+      --  the new object with a specific value.
+
+   private
+      Default : Allocation_Type;
+   end Subpool_Allocators;
 
 private
 
@@ -443,8 +452,16 @@ private
 
    procedure Finalize   (Pool : in out Dynamic_Pool);
 
-   pragma Inline
-     (Allocate, Default_Subpool_for_Pool,
-      Initialize, Finalize, Is_Owner, Set_Owner);
+   --  Note: In standard Ada, one should be able to list all of these
+   --  subprograms in a single pragma Inline, however the Janus Ada compiler
+   --  currently does not support that, which is why they are listed
+   --  individually here
+   --
+   pragma Inline (Allocate);
+   pragma Inline (Default_Subpool_For_Pool);
+   pragma Inline (Initialize);
+   pragma Inline (Finalize);
+   pragma Inline (Is_Owner);
+   pragma Inline (Set_Owner);
 
 end Dynamic_Pools;

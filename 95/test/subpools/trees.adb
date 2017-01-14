@@ -9,11 +9,9 @@
 
 package body Trees is
 
-   function New_Node is new
-     Allocation
-       (Allocation_Type => Node,
-        Allocation_Type_Access => Tree_Node);
-
+   package Node_Allocators is new Subpool_Allocators
+                                    (Allocation_Type        => Node,
+                                     Allocation_Type_Access => Tree_Node);
    function Create
      (Subpool : Subpool_Handle;
       Item : Integer;
@@ -23,8 +21,9 @@ package body Trees is
         (Item : Integer;
          Depth : Integer) return Tree_Node
       is
-         Result : constant Tree_Node := New_Node (Subpool);
+         Result : constant Tree_Node := Node_Allocators.Allocate (Subpool);
       begin
+
          if Depth > 0 then
             Result.all := (Left => Recurse (2 * Item - 1, Depth - 1),
                            Right => Recurse (2 * Item, Depth - 1),

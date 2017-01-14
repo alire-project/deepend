@@ -218,30 +218,6 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Allocation
-     (Subpool : Subpool_Handle) return Allocation_Type_Access
-   is
-      package Subpool_Handle_Conversions is new
-        Address_To_Access_Conversions (Object => Allocation_Type);
-
-      Location : System.Address;
-   begin
-
-      Allocate_From_Subpool
-        (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
-         Storage_Address => Location,
-         Size_In_Storage_Elements =>
-           Allocation_Type'Max_Size_In_Storage_Elements,
-         Alignment => Allocation_Type'Alignment,
-         Subpool => Subpool);
-
-      return Allocation_Type_Access'
-        (Subpool_Handle_Conversions.To_Pointer
-           (Location).all'Unchecked_Access);
-   end Allocation;
-
-   --------------------------------------------------------------
-
    procedure Append
      (Container : in out Subpool_Vector;
       New_Item : Dynamic_Subpool_Access) is
@@ -458,40 +434,6 @@ package body Dynamic_Pools is
 
    --------------------------------------------------------------
 
-   function Initialized_Allocation
-     (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type)
-      return Allocation_Type_Access
-   is
-      package Subpool_Handle_Conversions is new
-        Address_To_Access_Conversions (Object => Allocation_Type);
-
-      Location : System.Address;
-   begin
-
-      Allocate_From_Subpool
-        (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
-         Storage_Address => Location,
-         Size_In_Storage_Elements =>
-           Qualified_Expression'Size /
-             System.Storage_Elements.Storage_Element'Size,
-         Alignment => Allocation_Type'Alignment,
-         Subpool => Subpool);
-
-      declare
-         Result : constant Allocation_Type_Access :=
-           Allocation_Type_Access'
-             (Subpool_Handle_Conversions.To_Pointer
-                (Location).all'Unchecked_Access);
-      begin
-         Result.all := Qualified_Expression;
-         return Result;
-      end;
-
-   end Initialized_Allocation;
-
-   --------------------------------------------------------------
-
    function Is_Owner
      (Pool : Dynamic_Pool;
       T : Task_Id := Current_Task) return Boolean is
@@ -549,6 +491,7 @@ package body Dynamic_Pools is
          or else (Is_Owner (Subpool) and then T = Null_Task_Id));
 
       Dynamic_Subpool (Subpool.all).Owner := T;
+
    end Set_Owner;
 
    --------------------------------------------------------------
@@ -642,5 +585,80 @@ package body Dynamic_Pools is
           Subpool);
 
    end Unchecked_Deallocate_Subpool;
+
+   package body Subpool_Allocators is
+
+      function Allocate
+        (Subpool : Subpool_Handle;
+         Value : Allocation_Type := Default_Value)
+      return Allocation_Type_Access
+      is
+         package Subpool_Handle_Conversions is new
+           Address_To_Access_Conversions (Object => Allocation_Type);
+
+         Location : System.Address;
+      begin
+
+         Allocate_From_Subpool
+           (Dynamic_Pool
+              (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
+            Storage_Address => Location,
+            Size_In_Storage_Elements =>
+              Value'Size / System.Storage_Elements.Storage_Element'Size,
+            Alignment       => Allocation_Type'Alignment,
+            Subpool         => Subpool);
+
+         declare
+            Result : constant Allocation_Type_Access :=
+              Allocation_Type_Access'
+                (Subpool_Handle_Conversions.To_Pointer
+                   (Location).all'Unchecked_Access);
+         begin
+            Result.all := Value;
+            return Result;
+         end;
+
+      end Allocate;
+
+      --------------------------------------------------------------
+
+      function Allocate
+        (Subpool : Scoped_Subpool;
+         Value   : Allocation_Type := Default_Value)
+      return Allocation_Type_Access
+      is
+         package Subpool_Handle_Conversions is new
+           Address_To_Access_Conversions (Object => Allocation_Type);
+
+         Location : System.Address;
+      begin
+
+         Allocate_From_Subpool
+           (Dynamic_Pool
+              (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool.Handle).all),
+            Storage_Address => Location,
+            Size_In_Storage_Elements =>
+              Value'Size / System.Storage_Elements.Storage_Element'Size,
+            Alignment       => Allocation_Type'Alignment,
+            Subpool         => Subpool.Handle);
+
+         declare
+            Result : constant Allocation_Type_Access :=
+              Allocation_Type_Access'
+                (Subpool_Handle_Conversions.To_Pointer
+                   (Location).all'Unchecked_Access);
+         begin
+            Result.all := Value;
+            return Result;
+         end;
+
+      end Allocate;
+
+      function Default_Value return Allocation_Type is
+      begin
+         return Default;
+      end Default_Value;
+
+   end Subpool_Allocators;
 
 end Dynamic_Pools;

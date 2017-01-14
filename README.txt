@@ -89,7 +89,6 @@ There are 4 Storage Pool packages to choose from in Deepend.
   is fully allocated to objects and further objects are allocated,
   then another block of storage is allocated to the subpool, and further
   allocations to that subpool are carved out of that new storage block.
-
   The Bounded_Dynamic_Pools package has subpool capabilities where the
   storage in each Subpool object is bounded, and the number of subpools
   that may be allocated is also bounded. If the Subpool is fully
@@ -125,9 +124,9 @@ There are 4 Storage Pool packages to choose from in Deepend.
   indicate whether the storage for the pool resides on the heap or 
   on the stack, or statically at library level.
 
-  Both Basic_Dynamic_Pools and Bounded_Basic_Dynamic_Pools are forward 
-  compatible with the Ada 2012 standard for Storage_Pools, since they only 
-  allows allocations via the existing "new" operator (without subpool 
+  Both Basic_Dynamic_Pools and Bounded_Basic_Dynamic_Pools are intended to be
+  mostly forward compatible with the Ada 2012 standard for Storage_Pools, since
+  they only allow allocations via the existing "new" operator (without subpool 
   specifications). This facility relies on access type finalization to
   finalize all the objects from a pool, and does not otherwise support
   subpools.
@@ -140,7 +139,7 @@ There are 4 Storage Pool packages to choose from in Deepend.
         Object := new (subpool_name) Object_Type'(Value);
 
   For Ada 95 and Ada 2005, a similar effect can be obtained by using the
-  Allocation and Initialized_Allocation generics provided by the packages.
+  Allocate calls from the Subpool_Allocators nested package.
   However, these generics only allow allocating non-controlled objects of
   definite types to a particular subpool, whereas in Ada 2012, indefinite
   types and controlled types, and other types needing finalization such as

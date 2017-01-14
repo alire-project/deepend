@@ -222,7 +222,7 @@ package Bounded_Dynamic_Pools is
    function Handle
      (Subpool : Scoped_Subpool) return Subpool_Handle;
 
-   Default_Subpool_Default_Size : constant := 16#FFFF#;
+   Default_Subpool_Default_Size : constant := 16#1FFF#;
    --  The default size of the default subpool
 
    Default_Maximum_Subpool_Count : constant := 1_024;
@@ -356,31 +356,37 @@ package Bounded_Dynamic_Pools is
    --  been deallocatd.
    --  The task calling Create_Default_Subpool initially "owns" the subpool.
 
-   generic
-      type Allocation_Type is private;
-      type Allocation_Type_Access is access all Allocation_Type;
-   function Allocation
-     (Subpool : Subpool_Handle) return Allocation_Type_Access;
-   --  This generic routine provides a mechanism to allocate an object of
-   --  a definite subtype from a specific subpool.
    pragma Compile_Time_Warning
      (Ada2012_Warnings,
-     "These generics currently have an edge in performance over using the " &
-     "new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
+     "The following generics currently have an edge in performance over " &
+     "the new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
 
    generic
       type Allocation_Type is private;
       type Allocation_Type_Access is access all Allocation_Type;
-   function Initialized_Allocation
-     (Subpool : Subpool_Handle;
-      Qualified_Expression : Allocation_Type) return Allocation_Type_Access;
-   --  This generic routine provides a mechanism to allocate an object of
-   --  a definite subtype from a specific subpool, and initializing the
-   --  new object with a specific value.
-   pragma Compile_Time_Warning
-     (Ada2012_Warnings,
-     "These generics currently have an edge in performance over using the " &
-     "new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
+   package Subpool_Allocators is
+
+      function Default_Value return Allocation_Type;
+
+      function Allocate
+        (Subpool : Subpool_Handle;
+         Value   : Allocation_Type := Default_Value)
+         return Allocation_Type_Access;
+      --  This generic routine provides a mechanism to allocate an object of
+      --  a definite subtype from a specific subpool, and initializing the
+      --  new object with a specific value.
+
+      function Allocate
+        (Subpool : Scoped_Subpool;
+         Value   : Allocation_Type := Default_Value)
+         return Allocation_Type_Access;
+      --  This generic routine provides a mechanism to allocate an object of
+      --  a definite subtype from a specific scoped subpool, and initializing
+      --  the new object with a specific value.
+
+   private
+      Default : Allocation_Type;
+   end Subpool_Allocators;
 
 private
 

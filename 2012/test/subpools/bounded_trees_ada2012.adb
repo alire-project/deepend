@@ -9,9 +9,9 @@
 
 package body Bounded_Trees_Ada2012 is
 
-   function New_Node is new
-     Allocation
-       (Allocation_Type => Node,
+   package Node_Allocators is new
+     Subpool_Allocators
+       (Allocation_Type        => Node,
         Allocation_Type_Access => Tree_Node);
 
    function Create
@@ -34,7 +34,7 @@ package body Bounded_Trees_Ada2012 is
             if Use_Ada2012_Subpool_Allocator_Syntax then
                return new (Subpool) Node;
             else
-               return New_Node (Subpool);
+               return Node_Allocators.Allocate (Subpool);
             end if;
 
             pragma Warnings (On, "*code can never be executed*");

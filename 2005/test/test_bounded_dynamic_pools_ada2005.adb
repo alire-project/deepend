@@ -16,7 +16,7 @@ is
    for Id_String_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (Id_String_Access);
 
-   type String_Access is access String;
+   type String_Access is access all String;
    for String_Access'Storage_Pool use Pool;
 
    type Node_Type is record
@@ -30,7 +30,7 @@ is
    for Node_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (Node_Access);
 
-   function New_Node is new Bounded_Dynamic_Pools.Allocation
+   package Node_Allocators is new Bounded_Dynamic_Pools.Subpool_Allocators
      (Node_Type,
       Node_Access);
 
@@ -43,12 +43,12 @@ is
    for O_Access'Storage_Pool use Pool;
    pragma No_Strict_Aliasing (O_Access);
 
-   function New_Ordinary_Type is new Bounded_Dynamic_Pools.Allocation
+   package Allocators is new Bounded_Dynamic_Pools.Subpool_Allocators
      (Ordinary_Type,
       O_Access);
 
-   function New_String is new Bounded_Dynamic_Pools.Initialized_Allocation
-     (Allocation_Type => Id_String,
+   package Id_String_Allocators is new Bounded_Dynamic_Pools.Subpool_Allocators
+     (Allocation_Type        => Id_String,
       Allocation_Type_Access => Id_String_Access);
 
    function Recurse (Depth : Natural) return Node_Access
@@ -56,14 +56,14 @@ is
       Sub_Pool : constant Bounded_Dynamic_Pools.Subpool_Handle
         := Bounded_Dynamic_Pools.Create_Subpool (Pool'Access);
 
-      Node : constant Node_Access := New_Node (Sub_Pool);
+      Node : constant Node_Access := Node_Allocators.Allocate (Sub_Pool);
 
       Name : constant String_Access :=
         new String'("Depth=" & Natural'Image (Depth));
 
       Description : constant Id_String_Access
-        := New_String (Subpool => Sub_Pool,
-                       Qualified_Expression => "ABCDEFGHIJ");
+        := Id_String_Allocators.Allocate (Subpool => Sub_Pool,
+                                          Value   => "ABCDEFGHIJ");
 
    begin
       if Depth = 0 then
@@ -164,7 +164,7 @@ begin
          for I in 1 .. 10 loop
             declare
                Object : constant O_Access
-                 := New_Ordinary_Type (Sub_Pool);
+                 := Allocators.Allocate (Sub_Pool);
                pragma Unreferenced (Object);
             begin
                null;
@@ -193,7 +193,7 @@ begin
          for I in 1 .. 10 loop
             declare
                Object : constant O_Access
-                 := New_Ordinary_Type (Sub_Pool.Handle);
+                 := Allocators.Allocate (Sub_Pool.Handle);
                pragma Unreferenced (Object);
             begin
                null;

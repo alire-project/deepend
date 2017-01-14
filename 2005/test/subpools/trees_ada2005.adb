@@ -9,9 +9,9 @@
 
 package body Trees_Ada2005 is
 
-   function New_Node is new
-     Allocation
-       (Allocation_Type => Node,
+   package Node_Allocators is new
+     Subpool_Allocators
+       (Allocation_Type        => Node,
         Allocation_Type_Access => Tree_Node);
 
    function Create
@@ -23,7 +23,7 @@ package body Trees_Ada2005 is
         (Item : Integer;
          Depth : Integer) return Tree_Node
       is
-         Result : constant Tree_Node := New_Node (Subpool);
+         Result : constant Tree_Node := Node_Allocators.Allocate (Subpool);
       begin
 
          if Depth > 0 then
