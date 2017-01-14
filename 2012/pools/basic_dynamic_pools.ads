@@ -224,7 +224,7 @@ package Basic_Dynamic_Pools is
 
    function Is_Owner
      (Pool : Basic_Dynamic_Pool;
-      T : Task_Id := Current_Task) return Boolean;
+      T : Task_Id := Current_Task) return Boolean with Inline;
    --  Returns True if the specified task "owns" the pool and thus is
    --  allowed to allocate from it.
 
@@ -232,6 +232,7 @@ package Basic_Dynamic_Pools is
      (Pool : in out Basic_Dynamic_Pool;
       T : Task_Id := Current_Task)
    with
+     Inline,
      Pre => (Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
        or else (Is_Owner (Pool) and then T = Null_Task_Id),
      Post => Is_Owner (Pool, T);
@@ -275,7 +276,7 @@ private
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
       Alignment : Storage_Elements.Storage_Count)
-   with Pre => Is_Owner (Pool, Current_Task);
+   with Inline, Pre => Is_Owner (Pool, Current_Task);
 
    overriding
    procedure Deallocate
@@ -285,13 +286,9 @@ private
       Alignment : Storage_Elements.Storage_Count) is null;
 
    overriding
-   procedure Initialize (Pool : in out Basic_Dynamic_Pool);
+   procedure Initialize (Pool : in out Basic_Dynamic_Pool) with Inline;
 
    overriding
-   procedure Finalize   (Pool : in out Basic_Dynamic_Pool);
-
-   pragma Inline
-     (Allocate,
-      Initialize, Finalize, Is_Owner, Set_Owner);
+   procedure Finalize   (Pool : in out Basic_Dynamic_Pool) with Inline;
 
 end Basic_Dynamic_Pools;

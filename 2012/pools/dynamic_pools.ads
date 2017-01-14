@@ -325,6 +325,7 @@ package Dynamic_Pools is
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task)
      with
+       Inline,
        Pre => (Is_Owner (Subpool, Current_Task)
                or else (Is_Owner (Subpool, Null_Task_Id)
                  and then (T = Current_Task or else T = Null_Task_Id)))
@@ -378,7 +379,7 @@ package Dynamic_Pools is
       type Allocation_Type_Access is access all Allocation_Type;
    package Subpool_Allocators is
 
-      function Default_Value return Allocation_Type;
+      function Default_Value return Allocation_Type with Inline;
 
       function Allocate
         (Subpool : Subpool_Handle;
@@ -398,6 +399,9 @@ package Dynamic_Pools is
 
    private
       Default : Allocation_Type;
+
+      function Default_Value return Allocation_Type is
+         (Default);
    end Subpool_Allocators;
 
 private
@@ -457,7 +461,7 @@ private
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count);
+      Alignment : Storage_Elements.Storage_Count) with Inline;
 
    overriding
    procedure Allocate_From_Subpool
@@ -483,7 +487,7 @@ private
    --  is set to null after this call.
 
    overriding
-   procedure Initialize (Pool : in out Dynamic_Pool);
+   procedure Initialize (Pool : in out Dynamic_Pool) with Inline;
    --  Create the default subpool if Pool.Default_Block_Size is non-zero
 
    overriding
@@ -496,7 +500,8 @@ private
 
    function Is_Owner
      (Pool : Dynamic_Pool;
-      T : Task_Id := Current_Task) return Boolean is (Pool.Owner = T);
+      T : Task_Id := Current_Task) return Boolean is
+     (Pool.Owner = T);
 
    function Is_Owner
      (Subpool : not null Subpool_Handle;
@@ -517,9 +522,5 @@ private
    function Has_Default_Subpool
      (Pool : Dynamic_Pool) return Boolean is
       (Pool.Default_Subpool /= null);
-
-   pragma Inline
-     (Allocate, Default_Subpool_for_Pool,
-      Initialize, Finalize, Is_Owner, Set_Owner);
 
 end Dynamic_Pools;

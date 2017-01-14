@@ -435,13 +435,7 @@ package body Dynamic_Pools is
             Result.all := Value;
             return Result;
          end;
-
       end Allocate;
-
-      function Default_Value return Allocation_Type is
-      begin
-         return Default;
-      end Default_Value;
 
    end Subpool_Allocators;
 

@@ -289,13 +289,13 @@ package Bounded_Dynamic_Pools is
    --  block.
 
    function Subpools_Used
-     (Pool : Dynamic_Pool) return Ada.Containers.Count_Type;
+     (Pool : Dynamic_Pool) return Ada.Containers.Count_Type with Inline;
    --  Indicates how many subpools are currently active with the pool.
    --  This result includes the default subpool
 
    function Is_Owner
      (Pool : Dynamic_Pool;
-      T : Task_Id := Current_Task) return Boolean;
+      T : Task_Id := Current_Task) return Boolean with Inline;
    --  Returns True if the specified task "owns" the pool and thus is
    --  allowed to allocate from it.
 
@@ -303,6 +303,7 @@ package Bounded_Dynamic_Pools is
      (Pool : in out Dynamic_Pool;
       T : Task_Id := Current_Task)
    with
+     Inline,
      Pre => (Is_Owner (Pool, Null_Task_Id) and then T = Current_Task)
        or else (Is_Owner (Pool) and then T = Null_Task_Id),
      Post => Is_Owner (Pool, T);
@@ -319,7 +320,9 @@ package Bounded_Dynamic_Pools is
    procedure Set_Owner
      (Subpool : not null Subpool_Handle;
       T : Task_Id := Current_Task)
-   with Pre => (Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
+     with
+        Inline,
+        Pre => (Is_Owner (Subpool, Null_Task_Id) and then T = Current_Task)
                 or else (Is_Owner (Subpool) and then T = Null_Task_Id),
         Post => Is_Owner (Subpool, T);
    --  An Owning task can relinquish ownership of a subpool by setting the
@@ -366,7 +369,7 @@ package Bounded_Dynamic_Pools is
       type Allocation_Type_Access is access all Allocation_Type;
    package Subpool_Allocators is
 
-      function Default_Value return Allocation_Type;
+      function Default_Value return Allocation_Type with Inline;
 
       function Allocate
         (Subpool : Subpool_Handle;
@@ -386,6 +389,9 @@ package Bounded_Dynamic_Pools is
 
    private
       Default : Allocation_Type;
+
+      function Default_Value return Allocation_Type is (Default);
+
    end Subpool_Allocators;
 
 private
@@ -461,7 +467,7 @@ private
      (Pool : in out Dynamic_Pool;
       Storage_Address : out Address;
       Size_In_Storage_Elements : Storage_Elements.Storage_Count;
-      Alignment : Storage_Elements.Storage_Count);
+      Alignment : Storage_Elements.Storage_Count) with Inline;
 
    overriding
    procedure Allocate_From_Subpool
@@ -487,7 +493,7 @@ private
    --  is set to null after this call.
 
    overriding
-   procedure Initialize (Pool : in out Dynamic_Pool);
+   procedure Initialize (Pool : in out Dynamic_Pool) with Inline;
    --  Create the default subpool if Pool.Default_Block_Size is non-zero
 
    overriding
@@ -528,9 +534,5 @@ private
      (Pool : Dynamic_Pool) return Ada.Containers.Count_Type
    is (Pool.Subpools.Active_Subpools +
        (if Pool.Has_Default_Subpool then 1 else 0));
-
-   pragma Inline
-     (Allocate, Default_Subpool_for_Pool,
-      Initialize, Finalize, Is_Owner, Set_Owner, Subpools_Used);
 
 end Bounded_Dynamic_Pools;

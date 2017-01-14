@@ -352,6 +352,7 @@ package Dynamic_Pools is
 
    private
       Default : Allocation_Type;
+      pragma Inline (Default_Value);
    end Subpool_Allocators;
 
 private

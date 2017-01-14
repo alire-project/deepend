@@ -1,5 +1,10 @@
 Deepend Version History.
 
+deepend-3.7.1 (Current Version)
+- A minor update that Inlines the new Default_Value functions, and in
+  the 2012 version of the code, all pragma Inlines are replaced with
+  use of the Inline aspect.
+
 deepend-3.7 (Current Version)
 - An issue was reported that allocations using the generic allocators,
   (Allocation and Scoped_Allocation) do not initialize memory, which is 
