@@ -328,11 +328,10 @@ package Dynamic_Pools is
      (Subpool : Scoped_Subpool) return Subpool_Handle;
 
    generic
-      type Allocation_Type is private;
+      type Allocation_Type (<>) is private;
       type Allocation_Type_Access is access all Allocation_Type;
+      Default_Value : Allocation_Type;
    package Subpool_Allocators is
-
-      function Default_Value return Allocation_Type;
 
       function Allocate
         (Subpool : Subpool_Handle;
@@ -350,9 +349,6 @@ package Dynamic_Pools is
       --  a definite subtype from a specific scoped subpool, and initializing
       --  the new object with a specific value.
 
-   private
-      Default : Allocation_Type;
-      pragma Inline (Default_Value);
    end Subpool_Allocators;
 
 private

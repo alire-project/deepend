@@ -28,7 +28,8 @@ is
 
    package Node_Allocators is new Dynamic_Pools.Subpool_Allocators
      (Node_Type,
-      Node_Access);
+      Node_Access,
+      Node_Type'(Value => 0, Name => null, Description => null, Next => null));
 
    type Ordinary_Type is
       record
@@ -40,11 +41,13 @@ is
 
    package Allocators is new Dynamic_Pools.Subpool_Allocators
      (Ordinary_Type,
-      O_Access);
+      O_Access,
+      Ordinary_Type'(Value => 0));
 
    package Id_String_Allocators is new Dynamic_Pools.Subpool_Allocators
-     (Allocation_Type => Id_String,
-      Allocation_Type_Access => Id_String_Access);
+     (Allocation_Type        => Id_String,
+      Allocation_Type_Access => Id_String_Access,
+      Default_Value          => Id_String'(others => ' '));
 
    function Recurse (Depth : Natural) return Node_Access
    is

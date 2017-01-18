@@ -365,11 +365,10 @@ package Bounded_Dynamic_Pools is
      "the new Ada 2012 allocator syntax, otherwise they shouldn't be needed");
 
    generic
-      type Allocation_Type is private;
+      type Allocation_Type (<>) is private;
       type Allocation_Type_Access is access all Allocation_Type;
+      Default_Value : Allocation_Type;
    package Subpool_Allocators is
-
-      function Default_Value return Allocation_Type with Inline;
 
       function Allocate
         (Subpool : Subpool_Handle;
@@ -386,11 +385,6 @@ package Bounded_Dynamic_Pools is
       --  This generic routine provides a mechanism to allocate an object of
       --  a definite subtype from a specific scoped subpool, and initializing
       --  the new object with a specific value.
-
-   private
-      Default : Allocation_Type;
-
-      function Default_Value return Allocation_Type is (Default);
 
    end Subpool_Allocators;
 

@@ -12,7 +12,10 @@ package body Bounded_Trees_Ada2012 is
    package Node_Allocators is new
      Subpool_Allocators
        (Allocation_Type        => Node,
-        Allocation_Type_Access => Tree_Node);
+        Allocation_Type_Access => Tree_Node,
+        Default_Value          => Node'(Left  => null,
+                                        Right => null,
+                                        Value => 0));
 
    function Create
      (Subpool : Subpool_Handle;
@@ -39,10 +42,6 @@ package body Bounded_Trees_Ada2012 is
 
             pragma Warnings (On, "*code can never be executed*");
 
-            pragma Compile_Time_Warning
-              (True,
-               "Ada 2012 subpool allocator syntax is currently" &
-                 " slower in GNAT than the Ada 2005 approach");
          end Allocate_Node;
 
          Result : constant Tree_Node := Allocate_Node;

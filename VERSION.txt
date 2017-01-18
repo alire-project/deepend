@@ -1,11 +1,25 @@
 Deepend Version History.
 
-deepend-3.7.1 (Current Version)
+deepend-3.8 (Current Version)
+- For the Ada95, Ada2005, and Ada 2012 versions, the generic
+  Subpool_Allocators package adds the Default_Value as a generic
+  formal object, rather than as a function of the package. In addition,
+  the allocation_type can now be an unconstrained type, so it is
+  possible to allocate objects such as variable length Strings or
+  objects with immutable discriminants to a specific subpool. 
+  It is still not possible to allocate objects of a limited type using
+  this approach, but for that, one can always use the Ada "new" keyword
+  syntax to allocate objects of limited types to the pool, but these
+  allocations will always go to the default subpool, unless the
+  the Ada 2012 subpool allocator syntax is used, in which case the
+  allocation goes to the specified subpool.
+
+deepend-3.7.1
 - A minor update that Inlines the new Default_Value functions, and in
   the 2012 version of the code, all pragma Inlines are replaced with
   use of the Inline aspect.
 
-deepend-3.7 (Current Version)
+deepend-3.7
 - An issue was reported that allocations using the generic allocators,
   (Allocation and Scoped_Allocation) do not initialize memory, which is 
   not consistent with how Ada allocators work. In particular, allocating

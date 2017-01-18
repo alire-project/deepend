@@ -12,7 +12,10 @@ package body Trees_Ada2005 is
    package Node_Allocators is new
      Subpool_Allocators
        (Allocation_Type        => Node,
-        Allocation_Type_Access => Tree_Node);
+        Allocation_Type_Access => Tree_Node,
+        Default_Value          => Node'(Left  => null,
+                                        Right => null,
+                                        Value => 0));
 
    function Create
      (Subpool : Subpool_Handle;

@@ -571,11 +571,6 @@ package body Dynamic_Pools is
 
       end Allocate;
 
-      function Default_Value return Allocation_Type is
-      begin
-         return Default;
-      end Default_Value;
-
    end Subpool_Allocators;
 
 end Dynamic_Pools;

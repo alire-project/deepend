@@ -39,7 +39,8 @@ With this Storage pool, Unchecked_Deallocation is implemented as a No-Op
 (null procedure), because it is not needed or intended to be used.
 If early finalization is needed, Unchecked_Deallocate_Subpool may be
 used, which has similar issues as Unchecked_Deallocation, but is
-safer, since it can be applied more globally, and less frequently. Even 
+safer, since it can be applied more globally to the whole subpool rather
+than a specific object, and thus would be applied less frequently. Even 
 Unchecked_Deallocate_Subpool is unnecessary for reclaiming subpools in 
 nested scopes with Deepend, as a scoped subpool facility is also provided, 
 which automatically finalizes subpools, when leaving the scope of their declaration.
@@ -141,18 +142,23 @@ There are 4 Storage Pool packages to choose from in Deepend.
   For Ada 95 and Ada 2005, a similar effect can be obtained by using the
   Allocate calls from the Subpool_Allocators nested package.
   However, these generics only allow allocating non-controlled objects of
-  definite types to a particular subpool, whereas in Ada 2012, indefinite
-  types and controlled types, and other types needing finalization such as
-  protected types may also be allocated to a subpool. Only task types or
-  types that have tasks cannot be allocated to a subpool in Ada 2012.
+  non-limited types to a particular subpool, whereas in Ada 2012, 
+  limited types and controlled types, and other types needing finalization
+  such as protected types may also be allocated to any subpool. Only task types
+  or types that have tasks cannot be allocated to a subpool in Ada 2012.
 
   In addition, for Ada 95, Ada 2005, and Ada 2012, the "new" keyword may be
   used with all the subpool packages without specifying a subpool, which results
   in an object being allocated to the default subpool for the storage pool.
+  Note: Using the "new" syntax allows one to allocate objects of limited types
+  to the default subpool of the pool for Ada 95, and Ada 2005, as otherwise
+  the Allocate generics would not allow this. In Ada 2012, one can not 
+  only allocate objects of limited types to the default subpool, but one
+  also allocate objects of limited types to any subpool, using the 
+  Ada 2012 subpool allocator syntax.
 
   The Dynamic_Pool and Bounded_Dynamic_Pool allow the default subpool to be
-  deallocated. Another default subpool can be reinstated by calling the
-  Create_Default_Subpool subprogram.
+  deallocated.
 
 4.0 BUILD INSTRUCTIONS 
 ======================
@@ -252,11 +258,10 @@ system, since Deepend does not rely on any OS-specific support.
 ===============
 
 For the Ada 95, and Ada 2005 versions of the packages, it is erroneous
-to allocate objects of unconstrained types and objects that need 
-finalization (Tasks, protected objects, or objects of types inherited from 
-types defined in Ada.Finalization) to a subpool and then Deallocate
-the subpool associated with those objects rather than wait for the pool
-finalization to occur. 
+to allocate objects that need finalization (Tasks, protected objects,
+or objects of types inherited from types defined in Ada.Finalization)
+to a subpool and then Deallocate the subpool associated with those
+objects rather than wait for the pool finalization to occur. 
 
 For the Ada 2012 version of the packages, it is only erroneous to
 allocate task objects, or objects that contain tasks to a subpool.
