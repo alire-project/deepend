@@ -498,6 +498,9 @@ private
      (Pool : in out Dynamic_Pool) return not null Subpool_Handle
    is (Subpool_Handle (Pool.Default_Subpool));
 
+   function Handle
+     (Subpool : Scoped_Subpool) return Subpool_Handle is (Subpool.Subpool);
+
    function Is_Owner
      (Pool : Dynamic_Pool;
       T : Task_Id := Current_Task) return Boolean is (Pool.Owner = T);
@@ -507,14 +510,21 @@ private
       T : Task_Id := Current_Task) return Boolean is
      (Dynamic_Subpool (Subpool.all).Owner = T);
 
-   overriding
    function Storage_Size
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
    is (Pool.Subpools.Storage_Total);
 
+   function Storage_Size
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count
+   is (Dynamic_Subpool_Access (Subpool).Size);
+
    function Storage_Used
      (Pool : Dynamic_Pool) return Storage_Elements.Storage_Count
    is (Pool.Subpools.Storage_Usage);
+
+   function Storage_Used
+     (Subpool : not null Subpool_Handle) return Storage_Elements.Storage_Count
+   is (Dynamic_Subpool_Access (Subpool).Next_Allocation - 1);
 
    use type Subpool_Handle;
 

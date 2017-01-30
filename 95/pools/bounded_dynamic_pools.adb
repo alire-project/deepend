@@ -212,7 +212,7 @@ package body Bounded_Dynamic_Pools is
           (Size => Size,
            Reusable => False);
 
-      Result : constant Subpool_Handle := New_Subpool.all'Unchecked_Access;
+      Result : constant Subpool_Handle := Subpool_Handle (New_Subpool);
    begin
 
       New_Subpool.Next_Allocation := 1;
@@ -221,7 +221,7 @@ package body Bounded_Dynamic_Pools is
 
       Pool.Subpools.Add (New_Subpool);
 
-      Storage_Pools.Subpools.Set_Pool_Of_Subpool
+      Sys.Storage_Pools.Subpools.Set_Pool_Of_Subpool
         (Subpool => Result,
          To => Pool.all);
 
@@ -235,10 +235,8 @@ package body Bounded_Dynamic_Pools is
      (Pool : in out Dynamic_Pool;
       Subpool : in out Subpool_Handle)
    is
-      The_Subpool : Dynamic_Subpool_Access
-        := Dynamic_Subpool (Subpool.all)'Access;
-
-      use type Storage_Pools.Subpools.Subpool_Handle;
+      The_Subpool : Dynamic_Subpool_Access := Dynamic_Subpool_Access (Subpool);
+      use type Sys.Storage_Pools.Subpools.Subpool_Handle;
    begin
 
       --  Only removes the access value from the Subpools container
@@ -323,7 +321,7 @@ package body Bounded_Dynamic_Pools is
 
          Subpool.Pool.Subpools.Add (Subpool.Storage'Unchecked_Access);
 
-         Storage_Pools.Subpools.Set_Pool_Of_Subpool
+         Sys.Storage_Pools.Subpools.Set_Pool_Of_Subpool
            (Subpool => Subpool.Handle,
             To => Subpool.Pool.all);
 
@@ -408,7 +406,7 @@ package body Bounded_Dynamic_Pools is
      (Subpool : Subpool_Handle) return Storage_Elements.Storage_Count
    is
       The_Subpool : constant Dynamic_Subpool_Access :=
-        Dynamic_Subpool (Subpool.all)'Access;
+        Dynamic_Subpool_Access (Subpool);
    begin
       return Storage_Size (The_Subpool);
    end Storage_Size;
@@ -436,7 +434,7 @@ package body Bounded_Dynamic_Pools is
      (Subpool : Subpool_Handle) return Storage_Elements.Storage_Count
    is
       The_Subpool : constant Dynamic_Subpool_Access :=
-        Dynamic_Subpool (Subpool.all)'Access;
+        Dynamic_Subpool_Access (Subpool);
    begin
       return Storage_Used (The_Subpool);
    end Storage_Used;
@@ -454,7 +452,7 @@ package body Bounded_Dynamic_Pools is
    procedure Unchecked_Deallocate_Subpool
      (Subpool : in out Subpool_Handle)
    is
-      use type Storage_Pools.Subpools.Subpool_Handle;
+      use type Sys.Storage_Pools.Subpools.Subpool_Handle;
    begin
       if Subpool = null then
          return;
@@ -463,27 +461,28 @@ package body Bounded_Dynamic_Pools is
       --  Since Ada.Unchecked_Deallocate_Subpool doesn't exist in Ada 2005,
       --  dispatch to Deallocate_Subpool directly.
       Deallocate_Subpool
-         (Dynamic_Pool (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
-          Subpool);
+        (Dynamic_Pool (Sys.Storage_Pools.Subpools.Pool_Of_Subpool
+         (Subpool).all),
+         Subpool);
 
    end Unchecked_Deallocate_Subpool;
 
    package body Subpool_Allocators is
+
+      package Subpool_Handle_Conversions is new
+        Address_To_Access_Conversions (Object => Allocation_Type);
 
       function Allocate
         (Subpool : Subpool_Handle;
          Value : Allocation_Type := Default_Value)
       return Allocation_Type_Access
       is
-         package Subpool_Handle_Conversions is new
-           Address_To_Access_Conversions (Object => Allocation_Type);
-
          Location : System.Address;
       begin
 
          Allocate_From_Subpool
            (Dynamic_Pool
-              (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
+              (Sys.Storage_Pools.Subpools.Pool_Of_Subpool (Subpool).all),
             Storage_Address => Location,
             Size_In_Storage_Elements =>
               Value'Size / System.Storage_Elements.Storage_Element'Size,
@@ -509,15 +508,13 @@ package body Bounded_Dynamic_Pools is
          Value   : Allocation_Type := Default_Value)
       return Allocation_Type_Access
       is
-         package Subpool_Handle_Conversions is new
-           Address_To_Access_Conversions (Object => Allocation_Type);
-
          Location : System.Address;
       begin
 
          Allocate_From_Subpool
            (Dynamic_Pool
-              (Storage_Pools.Subpools.Pool_Of_Subpool (Subpool.Handle).all),
+              (Sys.Storage_Pools.Subpools.Pool_Of_Subpool
+                   (Subpool.Handle).all),
             Storage_Address => Location,
             Size_In_Storage_Elements =>
               Value'Size / System.Storage_Elements.Storage_Element'Size,
@@ -526,9 +523,8 @@ package body Bounded_Dynamic_Pools is
 
          declare
             Result : constant Allocation_Type_Access :=
-              Allocation_Type_Access'
-                (Subpool_Handle_Conversions.To_Pointer
-                   (Location).all'Unchecked_Access);
+              Allocation_Type_Access
+                (Subpool_Handle_Conversions.To_Pointer (Location));
          begin
             Result.all := Value;
             return Result;

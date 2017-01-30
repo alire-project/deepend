@@ -47,7 +47,7 @@
 --  Pete Kovac.
 
 with Bounded_Trees_Ada95;
-with Bounded_Dynamic_Pools;   use Bounded_Dynamic_Pools;
+with Bounded_Dynamic_Pools;
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
@@ -55,7 +55,7 @@ with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
 with System.Storage_Elements; use System.Storage_Elements;
 
-procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
+procedure Binary_Trees_With_Bounded_Subpools_Ada95 is
 
    package Trees renames Bounded_Trees_Ada95;
 
@@ -160,7 +160,7 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : Scoped_Subpool
+               Short_Lived_Subpool : Bounded_Dynamic_Pools.Scoped_Subpool
                  (Pool => Trees.Pool'Access,
                   Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
                   Heap_Allocated => True);
@@ -173,13 +173,13 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada95 is
 
                Short_Lived_Tree_1 :=
                  Trees.Create
-                   (Handle (Short_Lived_Subpool),
+                   (Bounded_Dynamic_Pools.Handle (Short_Lived_Subpool),
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Trees.Create
-                    (Handle (Short_Lived_Subpool),
+                    (Bounded_Dynamic_Pools.Handle (Short_Lived_Subpool),
                      Item  => -I,
                      Depth => Depth);
 
@@ -215,7 +215,7 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : Scoped_Subpool
+         Subpool : Bounded_Dynamic_Pools.Scoped_Subpool
            (Pool => Trees.Pool'Access,
             Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
             Heap_Allocated => True);
@@ -224,7 +224,7 @@ begin
          --  in a single block
 
          Stretch_Tree : constant Trees.Tree_Node :=
-           Trees.Create (Subpool  => Handle (Subpool),
+           Trees.Create (Subpool  => Bounded_Dynamic_Pools.Handle (Subpool),
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
@@ -246,8 +246,8 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
+         Subpool : constant Bounded_Dynamic_Pools.Subpool_Handle
+           := Bounded_Dynamic_Pools.Create_Subpool
              (Pool => Trees.Pool'Access,
               Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
@@ -298,4 +298,4 @@ begin
       New_Line;
    end if;
 
-end Bounded_Binary_Trees_With_Subpools_Ada95;
+end Binary_Trees_With_Bounded_Subpools_Ada95;

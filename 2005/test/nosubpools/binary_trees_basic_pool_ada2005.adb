@@ -57,7 +57,7 @@ with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Task_Identification; use Ada.Task_Identification;
 with System.Storage_Elements; use System.Storage_Elements;
 
-procedure Binary_Trees_Without_Subpools_Ada2005 is
+procedure Binary_Trees_Basic_Pool_Ada2005 is
 
    Default_Number_Of_CPUs : constant := 2;
    Default_Depth : constant := 20;
@@ -301,4 +301,4 @@ begin
       New_Line;
    end if;
 
-end Binary_Trees_Without_Subpools_Ada2005;
+end Binary_Trees_Basic_Pool_Ada2005;

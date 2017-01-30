@@ -10,13 +10,14 @@
 package body Bounded_Trees_Ada95 is
 
    package Node_Allocators is new
-     Subpool_Allocators (Allocation_Type        => Node,
-                         Allocation_Type_Access => Tree_Node,
-                         Default_Value          => Node'(Left  => null,
-                                                         Right => null,
-                                                         Value => 0));
+     Bounded_Dynamic_Pools.Subpool_Allocators
+       (Allocation_Type        => Node,
+        Allocation_Type_Access => Tree_Node,
+        Default_Value          => Node'(Left  => null,
+                                        Right => null,
+                                        Value => 0));
    function Create
-     (Subpool : Subpool_Handle;
+     (Subpool : Bounded_Dynamic_Pools.Subpool_Handle;
       Item : Integer;
       Depth : Integer) return Tree_Node is
 

@@ -46,29 +46,23 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
-pragma Restrictions
-  (No_Implementation_Aspect_Specifications,
-   No_Implementation_Attributes,
-   No_Implementation_Identifiers,
-   No_Implementation_Units);
-
-with Bounded_Trees_Ada2012;
-with Bounded_Dynamic_Pools;   use Bounded_Dynamic_Pools;
+with Bounded_Trees_Ada2005;
+with Bounded_Dynamic_Pools;
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
 with System.Storage_Elements; use System.Storage_Elements;
-with System.Multiprocessors;
 
-procedure Bounded_Binary_Trees_With_Subpools_Ada2012 is
+procedure Binary_Trees_With_Bounded_Subpools_Ada2005 is
 
-   package Trees renames Bounded_Trees_Ada2012;
+   package Trees renames Bounded_Trees_Ada2005;
 
    pragma Default_Storage_Pool (Trees.Pool);
 
    Default_Depth : constant := 20;
+   Default_Number_Of_CPUs : constant := 2;
 
    function Get_Depth return Positive is
    begin
@@ -86,9 +80,7 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2012 is
       else
          return Positive'Min
            (Iterations,
-            Positive (System.Multiprocessors.Number_Of_CPUs) +
-              (Iterations mod Positive
-                 (System.Multiprocessors.Number_Of_CPUs)));
+            Default_Number_Of_CPUs + (Iterations mod Default_Number_Of_CPUs));
       end if;
    end Get_Worker_Count;
 
@@ -129,11 +121,10 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2012 is
             declare
                pragma Suppress (Accessibility_Check);
 
-               Short_Lived_Subpool : constant Scoped_Subpool
-                 := Scoped_Subpools.Create_Subpool
-                   (Pool => Trees.Pool,
-                    Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
-                    Heap_Allocated => True);
+               Short_Lived_Subpool : Bounded_Dynamic_Pools.Scoped_Subpool
+                 (Pool => Trees.Pool'Access,
+                  Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+                  Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -219,11 +210,10 @@ begin
 
          pragma Suppress (Accessibility_Check);
 
-         Subpool : constant Scoped_Subpool :=
-           Scoped_Subpools.Create_Subpool
-             (Pool => Trees.Pool,
-              Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
-              Heap_Allocated => True);
+         Subpool : Bounded_Dynamic_Pools.Scoped_Subpool
+           (Pool => Trees.Pool'Access,
+            Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+            Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -253,9 +243,9 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
-             (Pool => Trees.Pool,
+         Subpool : constant Bounded_Dynamic_Pools.Subpool_Handle
+           := Bounded_Dynamic_Pools.Create_Subpool
+             (Pool => Trees.Pool'Access,
               Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
@@ -307,4 +297,4 @@ begin
       New_Line;
    end if;
 
-end Bounded_Binary_Trees_With_Subpools_Ada2012;
+end Binary_Trees_With_Bounded_Subpools_Ada2005;

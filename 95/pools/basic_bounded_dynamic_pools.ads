@@ -278,8 +278,14 @@ private
 
    procedure Finalize   (Pool : in out Basic_Dynamic_Pool);
 
-   pragma Inline
-     (Allocate,
-      Initialize, Finalize, Is_Owner, Set_Owner);
+   --  NOTE: Ada 95 allows multiple subprograms to be mentioned in a single
+   --  Inline pragma, but Janus currently doesn't support this, which is why
+   --  they are listed separately
+   --
+   pragma Inline (Allocate);
+   pragma Inline (Initialize);
+   pragma Inline (Finalize);
+   pragma Inline (Is_Owner);
+   pragma Inline (Set_Owner);
 
 end Basic_Bounded_Dynamic_Pools;

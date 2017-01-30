@@ -53,7 +53,7 @@ pragma Restrictions
    No_Implementation_Units);
 
 with Trees_Ada2012;
-with Dynamic_Pools;          use Dynamic_Pools;
+with Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
@@ -128,10 +128,9 @@ procedure Binary_Trees_With_Subpools_Ada2012 is
          for I in 1 .. Iterations loop
             declare
                pragma Suppress (Accessibility_Check);
-               Short_Lived_Subpool : constant Scoped_Subpool
-                 := Create_Subpool
-                   (Pool => Trees.Pool,
-                    Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
+               Short_Lived_Subpool : constant Dynamic_Pools.Scoped_Subpool
+                 := Trees.Pool.Create_Subpool
+                   (Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
@@ -216,10 +215,9 @@ begin
 
          pragma Suppress (Accessibility_Check);
 
-         Subpool : constant Scoped_Subpool :=
-           Create_Subpool
-             (Pool => Trees.Pool,
-              Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+         Subpool : constant Dynamic_Pools.Scoped_Subpool :=
+           Trees.Pool.Create_Subpool
+             (Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -249,10 +247,9 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
-             (Pool => Trees.Pool,
-              Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+         Subpool : constant Dynamic_Pools.Subpool_Handle
+           := Trees.Pool.Create_Subpool
+             (Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block

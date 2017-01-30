@@ -6,7 +6,7 @@
 --    C version by Francesco Abbate
 --
 --  Contributed by Brad Moore
-with Bounded_Dynamic_Pools; use Bounded_Dynamic_Pools;
+with Bounded_Dynamic_Pools;
 with System.Storage_Elements; use System;
 
 pragma Elaborate_All (Bounded_Dynamic_Pools);
@@ -18,7 +18,7 @@ package Bounded_Trees_Ada95 is
    function Item_Check (Item : Tree_Node) return Integer;
 
    function Create
-     (Subpool : Subpool_Handle;
+     (Subpool : Bounded_Dynamic_Pools.Subpool_Handle;
       Item : Integer;
       Depth : Integer) return Tree_Node;
 

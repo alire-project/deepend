@@ -49,7 +49,14 @@ package body Basic_Dynamic_Pools is
 
    function Length (Container : Storage_Vector) return Natural;
 
-   pragma Inline (Append, Last_Element, Delete_Last, Length);
+   --  NOTE: Ada 95 allows multiple subprograms to be mentioned in a single
+   --  Inline pragma, but Janus currently doesn't support this, which is why
+   --  they are listed separately
+   --
+   pragma Inline (Append);
+   pragma Inline (Last_Element);
+   pragma Inline (Delete_Last);
+   pragma Inline (Length);
 
    --------------------------------------------------------------
 

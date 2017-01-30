@@ -55,18 +55,19 @@ pragma Restrictions
 
 with Trees.Creation;
 
-with Basic_Dynamic_Pools;    use Basic_Dynamic_Pools;
+with Basic_Bounded_Dynamic_Pools; use Basic_Bounded_Dynamic_Pools;
 
-with Ada.Text_IO;            use Ada.Text_IO;
-with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
-with Ada.Command_Line;       use Ada.Command_Line;
-with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
+with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Task_Identification; use Ada.Task_Identification;
+
 with System.Storage_Elements; use System.Storage_Elements;
 with System.Multiprocessors;
 
-procedure Binary_Trees_Without_Subpools_Ada2012 is
+procedure Binary_Trees_Basic_Bounded_Pool_Ada2012 is
 
    Default_Depth : constant := 20;
 
@@ -79,8 +80,7 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
       end if;
    end Get_Depth;
 
-   function Get_Worker_Count (Iterations : Natural) return Positive
-   is
+   function Get_Worker_Count (Iterations : Positive) return Positive is
    begin
       if Argument_Count > 1 then
          return Positive'Value (Argument (2));
@@ -88,8 +88,8 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
          return Positive'Min
            (Iterations,
             Positive (System.Multiprocessors.Number_Of_CPUs) +
-            (Iterations mod Positive
-               (System.Multiprocessors.Number_Of_CPUs)));
+              (Iterations mod Positive
+                 (System.Multiprocessors.Number_Of_CPUs)));
       end if;
    end Get_Worker_Count;
 
@@ -99,7 +99,7 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
                                                       Requested_Depth);
    Depth_Iterations : constant Positive := (Max_Depth - Min_Depth) / 2 + 1;
 
-   Worker_Count    : constant Positive := Get_Worker_Count (Depth_Iterations);
+   Worker_Count     : constant Positive := Get_Worker_Count (Depth_Iterations);
 
    task type Depth_Worker
      (Start, Finish : Positive := Positive'Last) is
@@ -130,14 +130,15 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
             declare
 
                Short_Lived_Pool : Basic_Dynamic_Pool
-                 (Block_Size =>
-                    2 * (2 ** (Depth + 1)) * Trees.Node_Size);
+                 (Size =>
+                    2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+                  Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
 
-               type Short_Lived_Tree_Node is access Trees.Tree_Node;
-               for Short_Lived_Tree_Node'Storage_Pool use Short_Lived_Pool;
+               type Short_Lived_Tree_Node is access Trees.Tree_Node
+                 with Storage_Pool => Short_Lived_Pool;
 
                package Short_Lived_Tree_Creator is new Trees.Creation
                  (Short_Lived_Tree_Node);
@@ -174,8 +175,8 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
 
    subtype Worker_Id is Positive range 1 .. Worker_Count;
 
-   Start_Index     : Positive := 1;
-   End_Index       : Positive := Depth_Iterations;
+   Start_Index         : Positive := 1;
+   End_Index           : Positive := Depth_Iterations;
 
    Iterations_Per_Task : constant Positive :=
      Depth_Iterations / Worker_Count;
@@ -200,14 +201,15 @@ procedure Binary_Trees_Without_Subpools_Ada2012 is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree_Pool : aliased Basic_Dynamic_Pool
-     (Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
+   Long_Lived_Tree_Pool : Basic_Dynamic_Pool
+     (Size => 2 ** (Max_Depth + 1) * Trees.Node_Size,
+      Heap_Allocated => True);
    --  Since we know how much storage we need, we might as well
    --  specify a block size large enough to hold all the objects
    --  in a single block
 
-   type Long_Lived_Tree_Node is access Trees.Tree_Node;
-   for Long_Lived_Tree_Node'Storage_Pool use Long_Lived_Tree_Pool;
+   type Long_Lived_Tree_Node is access Trees.Tree_Node
+     with Storage_Pool => Long_Lived_Tree_Pool;
 
    package Long_Lived_Tree_Creator is new Trees.Creation
      (Long_Lived_Tree_Node);
@@ -232,7 +234,8 @@ begin
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
          Stretch_Pool : Basic_Dynamic_Pool
-           (Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
+           (Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+            Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
@@ -312,4 +315,4 @@ begin
       New_Line;
    end if;
 
-end Binary_Trees_Without_Subpools_Ada2012;
+end Binary_Trees_Basic_Bounded_Pool_Ada2012;

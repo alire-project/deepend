@@ -7,10 +7,11 @@
 --
 --  Contributed by Brad Moore
 --
---  Note: This version of the code uses Deepends ability to allocate from
---  different pool objects using the same access type. In other words,
---  allocations are performed by calling the deepends "allocate" generic
---  rather than use the "new" operator.
+--  Note: This version of the code uses different access types of differing
+--  scopes for each pool thus relying on the access type finalization rather
+--  than Deepends ability to allocate from different pool objects using the
+--  same access type. In other words, all allocations are via the "new"
+--  operator rather than through deepends "allocate" generics.
 
 --  The requirements of the benchmark are;
 --
@@ -46,23 +47,23 @@
 --  GCBench, which in turn was adapted from a benchmark by John Ellis and
 --  Pete Kovac.
 
-with Bounded_Trees_Ada2005;
-with Bounded_Dynamic_Pools;   use Bounded_Dynamic_Pools;
+with Trees.Creation;
+
+with Basic_Bounded_Dynamic_Pools; use Basic_Bounded_Dynamic_Pools;
+
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Integer_Text_IO;     use Ada.Integer_Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Characters.Latin_1;  use Ada.Characters.Latin_1;
 with Ada.Exceptions;          use Ada.Exceptions;
+with Ada.Task_Identification; use Ada.Task_Identification;
+
 with System.Storage_Elements; use System.Storage_Elements;
 
-procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
+procedure Binary_Trees_Basic_Bounded_Pool_Ada2005 is
 
-   package Trees renames Bounded_Trees_Ada2005;
-
-   pragma Default_Storage_Pool (Trees.Pool);
-
-   Default_Depth : constant := 20;
    Default_Number_Of_CPUs : constant := 2;
+   Default_Depth : constant := 20;
 
    function Get_Depth return Positive is
    begin
@@ -119,31 +120,32 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
 
          for I in 1 .. Iterations loop
             declare
-               pragma Suppress (Accessibility_Check);
 
-               Short_Lived_Subpool : Scoped_Subpool
-                 (Pool => Trees.Pool'Access,
-                  Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size,
+               Short_Lived_Pool : Basic_Dynamic_Pool
+                 (Size =>
+                    2 * (2 ** (Depth + 1)) * Trees.Node_Size,
                   Heap_Allocated => True);
                --  Since we know how much storage we need, we might as well
                --  specify a block size large enough to hold all the objects
                --  in a single block
 
-               pragma Unsuppress (Accessibility_Check);
+               type Short_Lived_Tree_Node is access Trees.Tree_Node;
+               for Short_Lived_Tree_Node'Storage_Pool use Short_Lived_Pool;
 
-               Short_Lived_Tree_1, Short_Lived_Tree_2 : Trees.Tree_Node;
+               package Short_Lived_Tree_Creator is new Trees.Creation
+                 (Short_Lived_Tree_Node);
+
+               Short_Lived_Tree_1, Short_Lived_Tree_2 : Short_Lived_Tree_Node;
             begin
 
                Short_Lived_Tree_1 :=
-                 Trees.Create
-                   (Short_Lived_Subpool.Handle,
-                    Item  => I,
+                 Short_Lived_Tree_Creator.Create
+                   (Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
-                  Trees.Create
-                    (Short_Lived_Subpool.Handle,
-                     Item  => -I,
+                  Short_Lived_Tree_Creator.Create
+                    (Item  => -I,
                      Depth => Depth);
 
                Check := Check +
@@ -165,8 +167,8 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
 
    subtype Worker_Id is Positive range 1 .. Worker_Count;
 
-   Start_Index         : Positive := 1;
-   End_Index           : Positive := Depth_Iterations;
+   Start_Index     : Positive := 1;
+   End_Index       : Positive := Depth_Iterations;
 
    Iterations_Per_Task : constant Positive :=
      Depth_Iterations / Worker_Count;
@@ -174,9 +176,7 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
    Remainder           : Natural :=
      Depth_Iterations rem Worker_Count;
 
-   function Create_Worker return Depth_Worker
-   is
-      pragma Suppress (Accessibility_Check);
+   function Create_Worker return Depth_Worker is
    begin
       if Remainder = 0 then
          End_Index := Start_Index + Iterations_Per_Task - 1;
@@ -193,11 +193,27 @@ procedure Bounded_Binary_Trees_With_Subpools_Ada2005 is
       end return;
    end Create_Worker;
 
-   Long_Lived_Tree      : Trees.Tree_Node;
+   Long_Lived_Tree_Pool : Basic_Dynamic_Pool
+     (Size => 2 ** (Max_Depth + 1) * Trees.Node_Size,
+      Heap_Allocated => True);
+   --  Since we know how much storage we need, we might as well
+   --  specify a block size large enough to hold all the objects
+   --  in a single block
+
+   type Long_Lived_Tree_Node is access Trees.Tree_Node;
+   for Long_Lived_Tree_Node'Storage_Pool use Long_Lived_Tree_Pool;
+
+   package Long_Lived_Tree_Creator is new Trees.Creation
+     (Long_Lived_Tree_Node);
+
+   Long_Lived_Tree : Long_Lived_Tree_Node;
 
    Check : Integer;
 
 begin
+   --  The main task relinquishes ownership of the default subpool.
+   Set_Owner (Pool => Long_Lived_Tree_Pool,
+              T => Null_Task_Id);
 
    --  Do the stretch tree processing at the same time that the long lived
    --  tree is being created.
@@ -206,24 +222,24 @@ begin
       end Stretch_Depth_Task;
 
       task body Stretch_Depth_Task is
+
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         pragma Suppress (Accessibility_Check);
-
-         Subpool : Scoped_Subpool
-           (Pool => Trees.Pool'Access,
-            Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
+         Stretch_Pool : Basic_Dynamic_Pool
+           (Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size,
             Heap_Allocated => True);
          --  Since we know how much storage we need, we might as well
          --  specify a block size large enough to hold all the objects
          --  in a single block
 
-         pragma Unsuppress (Accessibility_Check);
+         type Stretch_Node is access Trees.Tree_Node;
+         for Stretch_Node'Storage_Pool use Stretch_Pool;
 
-         Stretch_Tree : constant Trees.Tree_Node :=
-           Trees.Create (Subpool  => Subpool.Handle,
-                         Item  => 0,
-                         Depth => Stretch_Depth);
+         package Stretch_Tree_Creator is new Trees.Creation (Stretch_Node);
+
+         Stretch_Tree : constant Stretch_Node :=
+           Stretch_Tree_Creator.Create (Item  => 0,
+                                        Depth => Stretch_Depth);
       begin
          Check        := Trees.Item_Check (Stretch_Tree);
          Put ("stretch tree of depth ");
@@ -243,15 +259,11 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
-             (Pool => Trees.Pool'Access,
-              Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
-         --  Since we know how much storage we need, we might as well
-         --  specify a block size large enough to hold all the objects
-         --  in a single block
       begin
-         Long_Lived_Tree := Trees.Create (Subpool, 0, Max_Depth);
+         --  Since the main task relinquished ownership, we can take ownership
+         --  here.
+         Set_Owner (Long_Lived_Tree_Pool);
+         Long_Lived_Tree := Long_Lived_Tree_Creator.Create (0, Max_Depth);
 
       exception
          when E : others =>
@@ -264,8 +276,6 @@ begin
 
    --  Now process the trees of different sizes in parallel and collect results
    declare
-      pragma Suppress (Accessibility_Check);
-
       Workers : array (Worker_Id) of Depth_Worker
         := (others => Create_Worker);
       pragma Unreferenced (Workers);
@@ -297,4 +307,4 @@ begin
       New_Line;
    end if;
 
-end Bounded_Binary_Trees_With_Subpools_Ada2005;
+end Binary_Trees_Basic_Bounded_Pool_Ada2005;

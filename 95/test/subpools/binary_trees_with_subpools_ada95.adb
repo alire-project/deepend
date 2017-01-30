@@ -47,7 +47,7 @@
 --  Pete Kovac.
 
 with Trees;
-with Dynamic_Pools;          use Dynamic_Pools;
+with Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
@@ -156,7 +156,7 @@ procedure Binary_Trees_With_Subpools_Ada95 is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : Scoped_Subpool
+               Short_Lived_Subpool : Dynamic_Pools.Scoped_Subpool
                  (Pool => Trees.Pool'Access,
                   Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
@@ -168,13 +168,13 @@ procedure Binary_Trees_With_Subpools_Ada95 is
 
                Short_Lived_Tree_1 :=
                  Trees.Create
-                   (Handle (Short_Lived_Subpool),
+                   (Dynamic_Pools.Handle (Short_Lived_Subpool),
                     Item  => I,
                     Depth => Depth);
 
                Short_Lived_Tree_2 :=
                   Trees.Create
-                    (Handle (Short_Lived_Subpool),
+                    (Dynamic_Pools.Handle (Short_Lived_Subpool),
                      Item  => -I,
                      Depth => Depth);
 
@@ -210,7 +210,7 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : Scoped_Subpool
+         Subpool : Dynamic_Pools.Scoped_Subpool
            (Pool => Trees.Pool'Access,
             Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
 
@@ -219,7 +219,7 @@ begin
          --  in a single block
 
          Stretch_Tree : constant Trees.Tree_Node :=
-           Trees.Create (Subpool  => Handle (Subpool),
+           Trees.Create (Subpool  => Dynamic_Pools.Handle (Subpool),
                          Item  => 0,
                          Depth => Stretch_Depth);
       begin
@@ -241,8 +241,8 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
+         Subpool : constant Dynamic_Pools.Subpool_Handle
+           := Dynamic_Pools.Create_Subpool
              (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well

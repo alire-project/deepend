@@ -47,7 +47,7 @@
 --  Pete Kovac.
 
 with Trees_Ada2005;
-with Dynamic_Pools;          use Dynamic_Pools;
+with Dynamic_Pools;
 with Ada.Text_IO;            use Ada.Text_IO;
 with Ada.Integer_Text_IO;    use Ada.Integer_Text_IO;
 with Ada.Command_Line;       use Ada.Command_Line;
@@ -117,8 +117,8 @@ procedure Binary_Trees_With_Subpools_Ada2005 is
 
          for I in 1 .. Iterations loop
             declare
-               Short_Lived_Subpool : constant Scoped_Subpool
-                 := Create_Subpool
+               Short_Lived_Subpool : constant Dynamic_Pools.Scoped_Subpool
+                 := Dynamic_Pools.Create_Subpool
                    (Pool => Trees.Pool'Access,
                     Block_Size => 2 * (2 ** (Depth + 1)) * Trees.Node_Size);
                --  Since we know how much storage we need, we might as well
@@ -201,8 +201,8 @@ begin
       task body Stretch_Depth_Task is
          Stretch_Depth : constant Positive := Max_Depth + 1;
 
-         Subpool : constant Scoped_Subpool :=
-           Create_Subpool
+         Subpool : constant Dynamic_Pools.Scoped_Subpool :=
+           Dynamic_Pools.Create_Subpool
              (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Stretch_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well
@@ -232,8 +232,8 @@ begin
       end Create_Long_Lived_Tree_Task;
 
       task body Create_Long_Lived_Tree_Task is
-         Subpool : constant Subpool_Handle
-           := Create_Subpool
+         Subpool : constant Dynamic_Pools.Subpool_Handle
+           := Dynamic_Pools.Create_Subpool
              (Pool => Trees.Pool'Access,
               Block_Size => 2 ** (Max_Depth + 1) * Trees.Node_Size);
          --  Since we know how much storage we need, we might as well

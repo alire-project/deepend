@@ -16,11 +16,9 @@ is
    pragma Default_Storage_Pool (Pool);
 
    subtype Id_String is String (1 .. 10);
-   type Id_String_Access is access Id_String;
-   for Id_String_Access'Storage_Pool use Pool;
+   type Id_String_Access is access Id_String with Storage_Pool => Pool;
 
-   type String_Access is access String;
-   for String_Access'Storage_Pool use Pool;
+   type String_Access is access String with Storage_Pool => Pool;
 
    type Node_Type is record
       Value : Integer;
@@ -29,8 +27,7 @@ is
       Next : access Node_Type;
    end record;
 
-   type Node_Access is access Node_Type;
-   for Node_Access'Storage_Pool use Pool;
+   type Node_Access is access Node_Type with Storage_Pool => Pool;
 
    type Ordinary_Type is
       record
@@ -138,11 +135,9 @@ is
 
    List : Node_Access;
 
-   type RC_Access is access Reference_Counted_Type;
-   for RC_Access'Storage_Pool use Pool;
+   type RC_Access is access Reference_Counted_Type with Storage_Pool => Pool;
 
-   type O_Access is access Ordinary_Type;
-   for O_Access'Storage_Pool use Pool;
+   type O_Access is access Ordinary_Type with Storage_Pool => Pool;
 
    Recursion_Depth : constant := 10;
 

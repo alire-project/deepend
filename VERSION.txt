@@ -1,6 +1,37 @@
 Deepend Version History.
 
-deepend-3.8 (Current Version)
+deepend-3.9 (Current Version)
+- Updates to support compilation with Janus Ada compiler for Ada 95
+  version.
+- Eliminate all usage of 'Unchecked_Access. In most cases, replace with
+  direct conversions to access type of derived class from access type of
+  parent class.
+- Move all instantiations of Address_To_Access_Conversions to library
+  level, to avoid accessibility check violations, in turn needed to
+  eliminate use of 'Unchecked_Access
+- Rename binary_trees_without_subpools_adaXXXX.adb to
+  binary_trees_basic_pool_adaXXXX.adb to avoid name conflicts of object
+  files in Janus Ada, when reduced to an 8.3 filename.
+- Rename bounded_binary_trees_without_subpools_adaXXXX.adb to
+  binary_trees_basic_bounded_pool_adaXXXX.adb to avoid name conflicts of
+  object files in Janus Ada, when reduced to an 8.3 filename.
+- Rename bounded_binary_trees_with_subpools_adaXXXX.adb to
+  binary_trees_with_bounded_subpools_adaXXXX.adb to avoid name conflicts
+  of object files in Janus Ada, when reduced to an 8.3 filename.
+- Remove use Dynamic_Pools; clause in subpool tree examples, which makes
+  it more obvious where declarations come from in the examples, and also
+  gets around a name resolution bug in ObjectAda.
+- Convert Handle, Storage_Size, and Storage_Used to expression functions
+  in Ada 2012 version.
+- Use Storage_Pool aspect in Ada 2012 version, rather than pragmas
+- In Ada95 version, separate Inline pragmas to accommodate Janus which
+  does not currently support mentioning more than one subprogram in a
+  single Inline pragma
+- Eliminate Use Sys; in Ada95 version to improve readability in making
+  it clear where declarations are coming from, and also to work around
+  name resolution bug in Janus.
+
+deepend-3.8
 - For the Ada95, Ada2005, and Ada 2012 versions, the generic
   Subpool_Allocators package adds the Default_Value as a generic
   formal object, rather than as a function of the package. In addition,

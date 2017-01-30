@@ -191,14 +191,13 @@ with Ada.Finalization;
 
 with System.Storage_Elements; use System;
 with Sys.Storage_Pools.Subpools;
-use Sys;
 
 package Bounded_Dynamic_Pools is
 
    pragma Elaborate_Body;
    --  Needed to ensure that library routines can execute allocators
 
-   subtype Subpool_Handle is Storage_Pools.Subpools.Subpool_Handle;
+   subtype Subpool_Handle is Sys.Storage_Pools.Subpools.Subpool_Handle;
    subtype Subpool_Count is Positive;
 
    Default_Subpool_Default_Size : constant := 16#FFFF#;
@@ -209,7 +208,7 @@ package Bounded_Dynamic_Pools is
    type Dynamic_Pool
      (Default_Subpool_Size : Storage_Elements.Storage_Count;
       Maximum_Subpools : Subpool_Count) is
-     new Storage_Pools.Subpools.Root_Storage_Pool_With_Subpools
+     new Sys.Storage_Pools.Subpools.Root_Storage_Pool_With_Subpools
    with private;
    --  The Default_Subpool_Size is the size of the default
    --  subpool, and with the overriding Create_Subpool call. A value of zero
@@ -389,7 +388,7 @@ private
    type Dynamic_Subpool
      (Size : Storage_Elements.Storage_Count;
       Reusable : Boolean) is
-     new Storage_Pools.Subpools.Root_Subpool with
+     new Sys.Storage_Pools.Subpools.Root_Subpool with
       record
          Active : Storage_Array (1 .. Size);
          Next_Allocation : Storage_Array_Index;
@@ -420,7 +419,7 @@ private
    type Dynamic_Pool
      (Default_Subpool_Size : Storage_Elements.Storage_Count;
       Maximum_Subpools : Subpool_Count)
-     is new Storage_Pools.Subpools.Root_Storage_Pool_With_Subpools
+     is new Sys.Storage_Pools.Subpools.Root_Storage_Pool_With_Subpools
    with record
       Default_Subpool : Subpool_Handle;
       Subpools : Subpool_Set (Maximum_Subpools);
@@ -453,10 +452,9 @@ private
 
    procedure Finalize   (Pool : in out Dynamic_Pool);
 
-   --  Note: In standard Ada, one should be able to list all of these
-   --  subprograms in a single pragma Inline, however the Janus Ada compiler
-   --  currently does not support that, which is why they are listed
-   --  individually here
+   --  NOTE: Ada 95 allows multiple subprograms to be mentioned in a single
+   --  Inline pragma, but Janus currently doesn't support this, which is why
+   --  they are listed separately
    --
    pragma Inline (Allocate);
    pragma Inline (Default_Subpool_For_Pool);
