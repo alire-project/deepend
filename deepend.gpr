@@ -1,0 +1,25 @@
+project Deepend is
+
+   for Library_Name use "deepend";
+
+   type Modes is ("95", "2005", "2012");
+
+   Ada_Mode : Modes := External ("Ada_Mode", "2012");
+
+   for Source_Dirs use (Ada_Mode & "/pools");
+   for Object_Dir use "obj";
+   for Library_Dir use "lib";
+
+   package Builder is
+      for Switches ("ada") use ("-j0", "-g");
+   end Builder;
+
+   package Compiler is
+      for Switches ("ada") use ("-gnatVa", "-gnatwa", "-g", "-O2", "-gnata", "-gnato", "-fstack-check");
+   end Compiler;
+
+   package Binder is
+      for Switches ("ada") use ("-Es");
+   end Binder;
+
+end Deepend;
